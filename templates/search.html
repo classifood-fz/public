@@ -1,0 +1,153 @@
+{% extends "search_top.html" %}
+
+{% block title %}
+    {{ search_term }}
+{% endblock title %}
+
+{% block headcss2 %}
+    <link type="text/css" rel="stylesheet" href="/css/search.css" />
+{% endblock headcss2 %}
+
+{% block headjs2 %}
+    <script type="text/javascript" src="/js/shopping_utils.js"></script>
+    <script>
+        jQuery(document).ready(function() {
+            if (!get_cookie('euid')) {
+                jQuery('.add_remove_btn').hide();
+            }
+        });
+
+        function swap_shopping_buttons(n) {
+            if (jQuery('#add_shopping_'+n).is(':hidden')) {
+                jQuery('#add_shopping_'+n).show();
+                jQuery('#remove_shopping_'+n).hide();
+            } else {
+                jQuery('#add_shopping_'+n).hide();
+                jQuery('#remove_shopping_'+n).show();
+            }
+        }
+
+        function swap_pantry_buttons(n) {
+            if (jQuery('#add_pantry_'+n).is(':hidden')) {
+                jQuery('#add_pantry_'+n).show();
+                jQuery('#remove_pantry_'+n).hide();
+            } else {
+                jQuery('#add_pantry_'+n).hide();
+                jQuery('#remove_pantry_'+n).show();
+            }
+        }
+    </script>
+{% endblock headjs2 %}
+
+{% block content %}
+    <table id="page_columns">
+        <tbody>
+            <tr>
+                <td id="left_column">
+
+                </td>
+                <td id="middle_column">
+                    {% if products %}
+                        {{ start|add:1 }} to {{ start|add:products_len }} of {{ total_found }}
+                        <br>
+                        <br>
+                        <hr>
+                        <br>
+                    {% endif %}
+
+                    {% for product in products %}
+                        <span class="product_name">
+                            {{ product.product_name }}
+                            {% if product.product_size %}
+                                {{ product.product_size }}
+                            {% endif %}
+                        </span>
+
+                        {% for allergen in product.details.allergens %}
+                            {% if allergen.allergen_value == '2' %}
+                                <span class="contains">Contains {{ allergen.allergen_name }}</span>
+                            {% elif allergen.allergen_value == '1' %}
+                                <span class="may_contain">May Contain {{ allergen.allergen_name }}</span>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% for additive in product.details.additives %}
+                            {% if additive.additive_value == '2' %}
+                                <span class="contains">Contains {{ additive.additive_name }}</span>
+                            {% elif additive.additive_value == '1' %}
+                                <span class="may_contain">May Contain {{ additive.additive_name }}</span>
+                            {% endif %}
+                        {% endfor %}                      
+
+                        <div id="buttons_{{ forloop.counter }}" class="add_remove_btn">
+                            <a id="remove_shopping_{{ forloop.counter }}" class="{% if not product.on_shopping_list %}hidden{% endif %}" title="Remove from shopping list" onclick="remove_from_shopping_list('{{ product.upc }}', function(){swap_shopping_buttons('{{ forloop.counter }}')});"><img class="img_btn" src="/img/full_cart.png" /></a>
+                            <a id="add_shopping_{{ forloop.counter }}" class="{% if product.on_shopping_list %}hidden{% endif %}" title="Add to shopping list" onclick="add_to_shopping_list('{{ product.upc }}', function(){swap_shopping_buttons('{{ forloop.counter }}')});"><img class="img_btn" src="/img/empty_cart.png" /></a>
+                            <a id="remove_pantry_{{ forloop.counter }}" class="{% if not product.in_pantry %}hidden{% endif %}" title="Remove from pantry" onclick="remove_from_pantry('{{ product.upc }}', function(){swap_pantry_buttons('{{ forloop.counter }}')});"><img class="img_btn" src="/img/full_pantry.png" /></a>
+                            <a id="add_pantry_{{ forloop.counter }}" class="{% if product.in_pantry %}hidden{% endif %}" title="Add to pantry" onclick="add_to_pantry('{{ product.upc }}', function(){swap_pantry_buttons('{{ forloop.counter }}')});"><img class="img_btn" src="/img/empty_pantry.png" /></a>
+                        </div>
+
+                        <br>
+
+                        {% if product.details.shelf %}
+                            <span class="shelf">{{ product.details.shelf }}</span><br>
+                        {% endif %}
+
+                        <br>
+
+                        <table class="details"><tbody>
+                            {% if product.details.serving_size %}
+                                <tr><td class="details_col1">Serving Size:</td><td class="details_col3" colspan="2">{{ product.details.serving_size }}{{ product.serving_size_uom }}</td></tr>
+                            {% endif %}
+
+                            {% if product.details.servings_per_container %}
+                                <tr><td class="details_col1">Servings Per Container:</td><td class="details_col3" colspan="2">{{ product.details.servings_per_container }}</td></tr>
+                            {% endif %}
+
+                            {% for nutrient in product.details.nutrients %}
+                                {% if nutrient.nutrient_value %}
+                                    {% if forloop.first %}
+                                        <tr><td colspan="3">&nbsp;</td></tr>
+                                    {% endif %}
+                                    <tr><td class="details_col1">{{ nutrient.nutrient_name }}:</td><td class="details_col2">{{ nutrient.nutrient_value }}{{ nutrient.nutrient_uom }}</td><td class="details_col3">{{ nutrient.percentage_value }}</td></tr>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if product.details.ingredients %}
+                                <tr><td colspan="3">&nbsp;</td></tr>
+                                <tr><td class="details_col1">Ingredients:</td><td class="details_col3" colspan="2">{{ product.details.ingredients|lower }}</td></tr>
+                            {% endif %}
+
+                            {% if product.manufacturer %}
+                                <tr><td colspan="3">&nbsp;</td></tr>
+                                <tr><td class="details_col1">Manufacturer:</td><td class="details_col3" colspan="2">{{ product.manufacturer|upper }}</td></tr>
+                            {% endif %}
+                            <tr><td class="details_col1">Barcode:</td><td class="details_col3" colspan="2">{{ product.upc }}</td></tr>
+                        </tbody></table>
+                        <br>
+                        <hr>
+                        <br>
+                    {% empty %}
+                        <img src="/img/no_results.png" alt="no_results.png" />
+                    {% endfor %}
+
+                    <div id="pagination">
+                        {% if pages|length > 1 %}
+                            {% for page_start, page_label in pages %}
+                                {% if page_start == start %}
+                                    <span class="page_label">{{ page_label }}</span>
+                                {% else %}
+                                    <form class="page_form" action="/search" method="GET">
+                                        <input type="hidden" name="q" value="{{ search_term }}" />
+                                        <input type="hidden" name="start" value="{{ page_start }}" />
+                                        <input class="page_link" type="submit" value="{{ page_label }}" />
+                                    </form>                        
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </td>
+                <td id="right_column"></td>
+            </tr>
+        </tbody>
+    </table>
+{% endblock content %}

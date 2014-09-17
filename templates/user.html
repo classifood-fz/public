@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block headcss %}
+    <link type="text/css" rel="stylesheet" href="/css/user.css" />
+    {% block headcss2 %}
+    {% endblock headcss2 %}
+{% endblock headcss %}
+
+{% block headjs %}
+    <script type="text/javascript" src="/js/shopping_utils.js"></script>
+    <script>
+        jQuery(document).ready(function() {           
+            jQuery('#signout').click(function() {
+                delete_cookie('euid');
+                window.location.href='/';
+            });
+        });
+    </script>
+    {% block headjs2 %}
+    {% endblock headjs2 %}
+{% endblock headjs %}
+
+{% block content %}
+    <div id="box">
+        <div id="top">
+            <div id="dropdown">
+                <ul id="menu" class="dropdown">
+                    <a class="dropdown_link" href="/user/shopping_list"><li class="drop_item">
+                        <table><tbody>
+                            <tr><td><img src="/img/menu_cart.png" alt="menu_cart.png" /></td><td>Shopping List</td></tr>
+                        </tbody></table>
+                    </li></a>
+                    <a class="dropdown_link" href="/user/pantry"><li class="drop_item">
+                        <table><tbody>
+                            <tr><td><img src="/img/menu_pantry.png" alt="menu_pantry.png" /></td><td>Pantry</td></tr>
+                        </tbody></table>
+                    </li></a>
+                    <a class="dropdown_link" href="/user/profile"><li class="drop_item">
+                        <table><tbody>
+                            <tr><td><img src="/img/menu_profile.png" alt="menu_profile.png" /></td><td>Profile</td></tr>
+                        </tbody></table>
+                    </li></a>
+                    <a id="signout" class="dropdown_link"><li class="drop_item">
+                        <table><tbody>
+                            <tr><td><img src="/img/signout.png" alt="signout.png" /></td><td>Sign Out</td></tr>
+                        </tbody></table>
+                    </li></a>
+                </ul>
+            </div>
+        </div>
+        <div id="top_filler"></div>
+
+        <table id="logo_and_headline">
+            <tr>
+                <td>
+                    <a href="/"><img id="logo_icon" src="/img/classifood_icon_49x49.png" alt="logo_icon.png" /></a>
+                </td>
+                <td style="padding-left:10px;">{% block section_icon %}{% endblock section_icon %}</td>
+            </tr>
+        </table>
+
+        <div id="content_body">
+            {% block content_body %}
+            {% endblock content_body %}
+        </div>
+        <br><br>
+
+        <div id="bottom_links">
+            <!-- Links at the bottom of the page. -->
+            <a class="bottom_link" href="/about">About</a>
+            <a class="bottom_link" href="/terms_of_service">Terms of Service</a>
+            <a class="bottom_link" href="/privacy_policy">Privacy Policy</a>
+            <a class="bottom_link" href="/contact">Contact</a>
+            <span id="copyright" class="bottom_link">&#169; 2014 Classifood</span>
+        </div>
+        <div id="bottom_filler"></div>
+    </div>
+    <script>
+        /**
+         * This script sets #box height to the height of the window,
+         * or the height of the document, which ever is longer.
+         */
+        if (jQuery(window).height() == jQuery(document).height())
+            jQuery('#box').css('height', '100%');
+
+        jQuery(window).resize(function() {
+            if (jQuery(document).height() == jQuery(window).height())
+                jQuery('#box').css('height', '100%');
+            else
+                jQuery('#box').css('height', 'auto');
+        });
+    </script>
+{% endblock content %}
+
+{% block bottom %}{% endblock bottom %}

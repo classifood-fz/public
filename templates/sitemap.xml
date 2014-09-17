@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url><loc>http://www.classifood.com/</loc><priority>0.9</priority></url>
+    <url><loc>http://www.classifood.com/about</loc></url>
+    <url><loc>http://www.classifood.com/contact</loc></url>
+    <url><loc>http://www.classifood.com/terms_of_service</loc></url>
+    <url><loc>http://www.classifood.com/privacy_policy</loc></url>
+
+    {% for group in categories %}
+        {% for group_label, group_list in group.items %}
+            {% for category in group_list %}
+                <url><loc>http://www.classifood.com/search?q={{ category|urlencode }}</loc></url>
+            {% endfor %}
+        {% endfor %}
+    {% endfor %}
+</urlset>

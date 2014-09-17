@@ -1,0 +1,28 @@
+indexes:
+
+- kind: Pantry_Product
+  properties:
+  - name: user_id
+  - name: barcode
+
+- kind: Pantry_Product
+  properties:
+  - name: user_id
+  - name: add_datetime
+    direction: desc
+
+- kind: Shopping_List_Product
+  properties:
+  - name: user_id
+  - name: barcode
+
+- kind: Shopping_List_Product
+  properties:
+  - name: user_id
+  - name: add_datetime
+    direction: desc
+
+- kind: Ingredient
+  properties:
+  - name: name
+  - name: grade

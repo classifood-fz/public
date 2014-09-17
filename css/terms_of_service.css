@@ -1,0 +1,35 @@
+#wrapper {
+    width: 800px;
+    margin: 20px auto;
+}
+
+#box {    
+    padding: 20px;
+    border: 1px solid #000000;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+@media (max-width: 800px) {
+    #wrapper {
+        width: 100%;
+	margin: 20px 0;
+    }
+
+    #box {
+        width: 92%;
+	margin: 0 auto;
+        padding: 0;
+        border: 0;
+    }
+
+    #logo {
+	display: none;
+    }
+
+    #logo_icon {
+	display: block;
+    }
+}

@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Contact{% endblock title %}
+
+{% block headcss %}
+    <link type="text/css" rel="stylesheet" href="/css/contact.css">
+{% endblock headcss %}
+
+{% block headjs %}
+    <script type="text/javascript" src="http://www.google.com/recaptcha/api/js/recaptcha_ajax.js"></script>
+
+    <script>
+        jQuery(document).ready(function() {
+            jQuery('#sender_email').click(function() {
+                if (jQuery.trim(jQuery('#sender_email').val()) == 'Your email') {
+                    jQuery('#sender_email').val('');
+                }
+            });
+
+            jQuery('#subject').click(function() {
+                if (jQuery.trim(jQuery('#subject').val()) == 'Subject') {
+                    jQuery('#subject').val('');
+                }
+            });
+
+            jQuery('#body').click(function() {
+                if (jQuery.trim(jQuery('#body').val()) == 'Message') {
+                    jQuery('#body').val('');
+                }
+            });
+
+            jQuery('#send_btn').click(function() {
+                jQuery.ajax({
+                    type: 'POST',
+                    url: '/send_contact_message',
+                    data: {
+                        'csrfmiddlewaretoken': jQuery('input[name="csrfmiddlewaretoken"').val(),
+                        'recaptcha_challenge_field': Recaptcha.get_challenge(),
+                        'recaptcha_response_field': Recaptcha.get_response(),
+                        'sender_email': jQuery('#sender_email').val(),
+                        'subject': jQuery('#subject').val(),
+                        'body': jQuery('#body').val()
+                    },
+                    dataType: 'text'
+
+                }).done(function(returned_text, status, jqxhr) {
+                    Recaptcha.reload();
+                    if (returned_text == 'sent') {
+                        clear_fields();
+                        clear_errors();
+                        jQuery('#message').html('<span class="message">Your message has been sent.</span><br><br>');
+                    } else if (returned_text == 'empty_sender_email') {
+                        clear_errors();
+                        jQuery('#sender_email_error').html('<span class="errorlist">Please enter your email address.</span><br>');
+                    } else if (returned_text == 'sender_email_not_email') {
+                        clear_errors();
+                        jQuery('#sender_email_error').html('<span class="errorlist">Please enter a valid email address.</span><br>');
+                    } else if (returned_text == 'empty_subject') {
+                        clear_errors();
+                        jQuery('#subject_error').html('<span class="errorlist">Please enter a subject.</span><br>');
+                    } else if (returned_text == 'empty_body') {
+                        clear_errors();
+                        jQuery('#body_error').html('<span class="errorlist">Please tell us why you are contacting Classifood.</span><br>');
+                    } else if (returned_text == 'over_max_body') {
+                        clear_errors();
+                        jQuery('#body_error').html('<span class="errorlist">Please keep the length under or equal to 3000 characters.</span><br>');
+                    } else if (returned_text == 'recaptcha_failed') {
+                        clear_errors();
+                        jQuery('#recaptcha_error').html('<span class="errorlist">Your input for recaptcha was incorrect.</span><br>');
+                    }
+
+                }).fail(function(jqxhr, status, error) {
+                    Recaptcha.reload();
+                    jQuery('#message').html('<span class="message">Error: ' + error + '. Please try again later.</span><br><br>');
+                });
+            });
+
+            jQuery('#body').keyup(function() {
+                jQuery('#body_char_count').text(3000-jQuery('#body').val().length);
+            });
+        });
+
+        function clear_fields() {
+            jQuery('#sender_email').val('');
+            jQuery('#subject').val('');
+            jQuery('#body').val('');
+        }
+
+        function clear_errors() {
+            jQuery('#sender_email_error').html('');
+            jQuery('#subject_error').html('');
+            jQuery('#body_error').html('');
+            jQuery('#recaptcha_error').html('');
+        }
+    </script>
+{% endblock headjs %}
+
+{% block content %}
+    <div id="wrapper">
+        <table id="title">
+            <tr>
+                <td><span id="contact">Contact</span></td>
+                <td><a href="/"><img src="/img/classifood_180x49.png" alt="logo.png" /></a></td>
+            </tr>
+        </table>
+
+        <br><br>
+
+        <table id="contact_form_table"><tbody>
+            <tr>
+                <td id="message"></td>
+            </tr>
+            <tr>
+                <td><input id="sender_email" type="text" name="sender_email" value="Your email" maxlength="100" /></td>
+            </tr>
+            <tr>
+                <td><span id="sender_email_error"></span><br></td>
+            </tr>
+            <tr>
+                <td><input id="subject" type="text" name="subject" value="Subject" maxlength="100" /></td>
+            </tr>
+            <tr>
+                <td><span id="subject_error"></span><br></td>
+            </tr>
+            <tr>
+                <td><textarea id="body" name="body" cols="40" rows="10">Message</textarea></td>
+            </tr>
+            <tr>
+                <td><span id="body_error"></span><span id="body_char_count" style="float:right; font-size:12px;">3000</span><br></td>
+            </tr>
+            <tr>
+                <td>
+                    <div id="recaptcha">
+                        <div id="recaptcha_image"></div>
+                        <div class="recaptcha_only_if_incorrect_sol errorlist">Incorrect. Please try again.</div>
+                        <br>
+                        <span class="recaptcha_only_if_image">Enter the words above:</span>
+                        <span class="recaptcha_only_if_audio">Enter the numbers you hear:</span>
+                        <input type="text" id="recaptcha_response_field" name="recaptcha_response_field" />
+                        <br><br>
+                        <div class="recaptcha_link"><a href="javascript:Recaptcha.reload()">Get another CAPTCHA</a></div>
+                        <div class="recaptcha_only_if_image recaptcha_link"><a href="javascript:Recaptcha.switch_type('audio')">Get an audio CAPTCHA</a></div>
+                        <div class="recaptcha_only_if_audio recaptcha_link"><a href="javascript:Recaptcha.switch_type('image')">Get an image CAPTCHA</a></div>
+                        <div class="recaptcha_link"><a href="javascript:Recaptcha.showhelp()">Help</a></div>
+                    </div>
+                </td>
+                <script>
+                    Recaptcha.create('{{ recaptcha_public_key }}', 'recaptcha', {theme: 'custom', custom_theme_widget: 'recaptcha'});
+                </script>
+            </tr>
+            <tr>
+                <td><span id="recaptcha_error"></span><br><br></td>
+            </tr>
+            <tr>
+                <td style="text-align:center;"><button id="send_btn" class="button">Send</button></td>
+            </tr>
+        </tbody></table>
+        <br>
+    </div>
+{% endblock content %}

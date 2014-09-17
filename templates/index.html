@@ -1,0 +1,87 @@
+{% extends "search_top.html" %}
+
+{% block headcss2 %}
+    <link type="text/css" rel="stylesheet" href="/css/index.css" />
+{% endblock headcss2 %}
+
+{% block headjs2 %}
+    <script>
+        /**
+         * Creates empty div columns in #wrapper with
+         * respect to the width of #wrapper
+         */ 
+        function create_columns() {            
+            var wrapper_width = jQuery('#wrapper').width();
+            var column_width = jQuery('.column').width();
+            var i = column_width;
+
+            while (i + column_width < wrapper_width) {
+                jQuery('#wrapper').append('<div class="column"></div>');
+                i += column_width;
+            }
+        }
+
+        /**
+         * Creates and returns a div node from
+         * a {'label': [a,r,r,a,y]} object
+         */
+        function create_group(group_list) {            
+            if (typeof group_list !== 'object')
+                return undefined;
+
+            var group = document.createElement('div');
+            group.setAttribute('class', 'group');
+
+            for (group_label in group_list) {
+                var group_title = document.createElement('span');
+                group_title.setAttribute('class', 'group_title');
+                group_title.innerText = group_label;
+                group.appendChild(group_title);
+                group.appendChild(document.createElement('br'));
+                group.appendChild(document.createElement('br'));
+
+                for (var i = 0; i < group_list[group_label].length; i++) {
+                    var group_item = document.createElement('span');
+                    group_item.setAttribute('class', 'group_item');
+                    var anchor = document.createElement('a');
+                    anchor.setAttribute('class', 'always_blue');
+                    anchor.setAttribute('href', '/search?q='+encodeURIComponent(group_list[group_label][i]));
+                    anchor.innerText = group_list[group_label][i];
+                    group_item.appendChild(anchor);
+                    group.appendChild(group_item);
+                    group.appendChild(document.createElement('br'));
+                }
+            }
+
+            return group;
+        }
+
+        /**
+         * Fills columns with food groups
+         */
+        function fill_columns() {
+            var categories = {{ categories }};
+            var columns = jQuery('.column');
+            var i = 0;
+
+            categories.forEach(function(group_list) {
+                columns[i].appendChild(create_group(group_list));
+                i = (i == columns.length-1) ? 0 : i+1;
+            });                                   
+        }
+    </script>
+{% endblock headjs2 %}
+
+{% block content %}
+    <div id="wrapper"><div class="column"></div></div>
+    <script>
+        create_columns();
+        fill_columns();
+
+        jQuery(window).resize(function() {
+            jQuery('#wrapper').html('<div class="column"></div>');
+            create_columns();
+            fill_columns();
+        });
+    </script>
+{% endblock %}

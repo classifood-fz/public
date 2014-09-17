@@ -1,0 +1,25 @@
+#wrapper {
+    width: 628px;
+    margin: 100px auto;
+    text-align: center;
+}
+
+#img {
+    max-width: 100%;
+    height: auto;
+    width: auto\9; /* IE8 */
+    margin: 0 auto;
+    padding: 10px;
+    border: 4px double #000000;
+}
+
+@media (max-width: 628px) {
+    #wrapper {
+	width: 100%;
+	margin: 10px auto;
+    }
+
+    #img {
+	max-width: 90%;
+    }
+}

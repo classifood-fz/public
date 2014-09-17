@@ -1,0 +1,59 @@
+#wrapper {
+    width: 542px;
+    margin: 40px auto;
+}
+
+#title {
+    margin: 0 auto;
+}
+
+#contact {
+    display: inline-block;
+    height: 29px;
+    padding: 10px;
+    font-weight: bold;
+    font-size: 24px;
+    color: #ffffff;
+    background-color: #000000;
+    vertical-align: middle;
+}
+
+#contact_form_table {
+    border-spacing: 0;
+    margin: 0 auto;
+}
+
+label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #1974D2;
+}
+
+#sender_email {
+    width: 440px;
+}
+
+#subject {
+    width: 440px;
+}
+
+#body {
+    width: 440px;
+}
+
+#recaptcha {
+    width: 440px;
+    padding: 4px;
+    border: 1px solid #cccccc;
+    font-size: 14px;
+}
+
+#recaptcha_image {
+    border: 1px solid #ffffff;
+}
+
+.recaptcha_link {
+    display: inline-block;
+    margin-right: 10px;
+    font-size: 12px;
+}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in{% endblock title %}
+
+{% block headcss %}
+    <link type="text/css" rel="stylesheet" href="/css/signin.css" />
+{% endblock headcss %}
+
+{% block headjs %}
+    <script>
+        /* This script is required for Google sign-in */
+        (function () {
+            var po = document.createElement('script');
+            po.type = 'text/javascript';
+            po.async = true;
+            po.src = 'https://plus.google.com/js/client:plusone.js?onload=start';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(po, s);
+        })();
+
+        function signInCallback(authResult) {
+            if (authResult['code']) {            
+                jQuery.ajax({
+                    type: 'POST',
+                    url: '/authenticate',
+                    contentType: 'application/octet-stream; charset=utf-8',
+                    dataType: 'json',
+                    processData: false,
+                    headers: { 'X-CSRFToken': jQuery('input[name="csrfmiddlewaretoken"]').val() },
+                    data: authResult['code'],
+                    success: function(returned_json, status, jqxhr) {
+                        if (returned_json['result'] == 'success') {
+                            set_cookie('euid', returned_json['euid'], 14);
+                            window.location.href = '/';
+                        }
+                    }
+                });
+            } 
+        }
+    </script>
+{% endblock headjs %}
+
+{% block content %}
+    <div id="wrapper">
+        <img id="img" src="/img/flowers.jpg" alt="flowers.jpg" />
+        <br><br>
+        <div id="signinButton">
+            <span class="g-signin"
+              data-scope="openid email"
+              data-clientid="<client_id>"
+              data-redirecturi="postmessage"
+              data-accesstype="offline"
+              data-cookiepolicy="single_host_origin"
+              data-callback="signInCallback"
+              data-width="wide"
+              data-height="tall"></span>
+        </div>
+
+<!-- Add data-approvalprompt="force" to g-signin to force authentication pop-up -->
+
+    </div>
+{% endblock %}

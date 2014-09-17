@@ -1,0 +1,40 @@
+#dropdown {
+    display: inline-block;
+    width: 22px;
+    height: 22px;    
+    background-image: url('/img/menu.png');
+    float: right;
+}
+
+#menu {
+    display: none;
+    position: absolute;
+    top: 8px;
+    right: 0px;
+    z-index: 100;
+}
+
+#signin {
+    display: none;
+    position: absolute;
+    top: 8px;
+    right: 0px;
+    z-index: 100;
+}
+
+li.drop_item {
+    padding: 4px;
+    border: 2px solid #000000;
+    list-style-type: none;
+    white-space: nowrap;
+    background-color: #000000;
+    color: #ffffff;
+}
+
+li.drop_item:hover {
+    border: 2px solid #cccccc;
+}
+
+a.dropdown_link {
+    text-decoration: none;
+}

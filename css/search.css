@@ -1,0 +1,27 @@
+#page_columns {
+    border-spacing: 0;
+}
+
+#left_column {
+    width: 200px;
+    padding: 10px;
+    text-align: center;
+    vertical-align: top;	
+    white-space: nowrap;
+}
+
+#middle_column {
+    width: 600px;
+    padding: 10px;
+    vertical-align: top;
+}
+
+.add_remove_btn {
+    float: right;
+}
+
+@media (max-width: 820px) {
+    #left_column {
+        display: none;
+    }
+}

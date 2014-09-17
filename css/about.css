@@ -1,0 +1,38 @@
+#wrapper {
+    margin: 40px auto;
+}
+
+#box {
+    width: 420px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #000000;
+}
+
+#title {
+    margin: 0 auto;
+}
+
+#about {
+    display: inline-block;
+    height: 29px;
+    padding: 10px;
+    font-weight: bold;
+    font-size: 24px;
+    color: #ffffff;
+    background-color: #000000;
+    vertical-align: middle;
+}
+
+#letters {
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    #box {
+	width: 90%;
+	padding: 0;
+	border: 0;
+	font-size: 14px;
+    }
+}

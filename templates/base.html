@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{% block title %}Classifood{% endblock title %}</title>
+
+        {% block description %}
+            <meta name="description" content="Search for food products, read nutrition facts and ingredients, read and write reviews, compare different food products, and add your favorites to your wish list." />
+        {% endblock description %}
+
+        {% block viewport %}
+            <meta name="viewport" content="width=device-width, initial-scale=0.8" />
+        {% endblock viewport %}
+
+        {% block social_media_tags %}
+        {% endblock social_media_tags %}
+
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+        <meta name="application-name" content="Classifood" />
+        <meta name="msapplication-TileColor" content="#088a68" />
+        <meta name="msapplication-square70x70logo" content="/img/classifood_icon_70x70.png" />
+        <meta name="msapplication-square150x150logo" content="/img/classifood_icon_150x150.png" />
+        <meta name="msapplication-wide310x150logo" content="/img/classifood_310x150.png" />
+        <meta name="msapplication-square310x310logo" content="/img/classifood_icon_310x310.png"/>
+
+        <link rel="icon" type="image/ico" href="/img/favicon.ico" />
+        <link type="text/css" rel="stylesheet" href="/css/jquery-ui-custom-theme/jquery-ui-1.10.3.custom.min.css" />
+        <link type="text/css" rel="stylesheet" href="/css/base.css" />
+        <link type="text/css" rel="stylesheet" href="/css/dropdown.css" />
+        {% block headcss %}
+        {% endblock headcss %}
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.1/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="/js/string.js"></script>
+        <script type="text/javascript" src="/js/cookie.js"></script>
+        <script type="text/javascript" src="/js/dropdown.js"></script>
+        <script>
+            jQuery(document).ready(function() {
+                jQuery('.button').button();
+
+                if (!browser_accepts_cookies()) {
+                    jQuery('#cookies_not_accepted_message').show();
+                }
+
+                {% if label_error %}
+                    jQuery('#no_data_message').show();
+                {% endif %}
+            });
+        </script>
+        {% block headjs %}
+        {% endblock headjs %}
+    </head>
+
+    <body>
+        <div id="js_off_message" "top_message">This website requires JavaScript in order to work properly. Please enable JavaScript in your browser settings.</div>
+        <div id="cookies_not_accepted_message" class="top_message hidden">This website requires the ability to set browser cookies in order to work properly. Please enable cookies in your browser settings.</div>
+        <div id="no_data_message" class="top_message hidden">We are having trouble with our data servers. Please try again later.</div>
+
+        <!-- Do not need to wait for page to load before hiding this message. -->
+        <script>
+            jQuery('#js_off_message').hide()
+        </script>
+
+        {% block top %}
+        {% endblock top %}
+    
+        {% block content %}
+        {% endblock content %}
+
+        <!-- csrfmiddlewaretoken is needed to use AJAX via HTTP POST -->
+        {% csrf_token %}
+        
+        {% block bottom %}
+            <div id="bottom_links">
+                <!-- Links at the bottom of the page. -->
+                <a class="bottom_link" href="/about">About</a>
+                <a class="bottom_link" href="/terms_of_service">Terms of Service</a>
+                <a class="bottom_link" href="/privacy_policy">Privacy Policy</a>
+                <a class="bottom_link" href="/contact">Contact</a>
+                <span id="copyright" class="bottom_link">&#169; 2014 Classifood</span>
+            </div>
+            <div id="bottom_filler"></div>
+        {% endblock bottom %}
+        <script>
+            jQuery(document).ready(function() {
+                /**
+                 * This script keeps #bottom_links at the bottom of the page
+                 * by switching between static and absolute positions, depending
+                 * the height of the document.
+                 */
+                if (jQuery(window).height() == jQuery(document).height()) {
+                    jQuery('#bottom_links').css('position', 'absolute').css('bottom', '0');
+                    jQuery('#bottom_filler').show();
+                }
+                jQuery(window).resize(function() {
+                    if (jQuery(window).height() == jQuery(document).height()) {
+                        jQuery('#bottom_links').css('position', 'absolute').css('bottom', '0');
+                        jQuery('#bottom_filler').show();
+                    }
+                    else {
+                        jQuery('#bottom_links').css('position', 'static');
+                        jQuery('#bottom_filler').hide();
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

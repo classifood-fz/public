@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block headcss %}
+    <link type="text/css" rel="stylesheet" href="/css/search_top.css" />
+    {% block headcss2 %}
+    {% endblock headcss2 %}
+{% endblock headcss %}
+
+{% block headjs %}
+    <script>
+        jQuery(document).ready(function() {
+            if (get_cookie('euid')) {
+                jQuery('#menu').addClass('dropdown');
+                jQuery('#signin').removeClass('dropdown').hide();
+            }
+
+            jQuery('#signout').click(function() {
+                delete_cookie('euid');
+                window.location.href = '/';
+            });
+
+            // Prevent empty queries
+            jQuery('#search_btn').click(function() {
+                if (jQuery.trim(jQuery('#q').val()) == '') {
+                    return false;
+                }
+            });
+        });
+    </script>
+    {% block headjs2 %}
+    {% endblock headjs2 %}
+{% endblock headjs %}
+
+{% block top %}
+    <div id="search_top_wrapper">
+        <div id="top_bar">
+            <div id="dropdown">
+                <ul id="menu">
+                    <a class="dropdown_link" href="/user/shopping_list"><li class="drop_item">
+                        <table><tbody>
+                            <tr><td><img src="/img/menu_cart.png" alt="menu_cart.png" /></td><td>Shopping List</td></tr>
+                        </tbody></table>
+                    </li></a>
+                    <a class="dropdown_link" href="/user/pantry"><li class="drop_item">
+                        <table><tbody>
+                            <tr><td><img src="/img/menu_pantry.png" alt="menu_pantry.png" /></td><td>Pantry</td></tr>
+                        </tbody></table>
+                    </li></a>
+                    <a class="dropdown_link" href="/user/profile"><li class="drop_item">
+                        <table><tbody>
+                            <tr><td><img src="/img/menu_profile.png" alt="menu_profile.png" /></td><td>Profile</td></tr>
+                        </tbody></table>
+                    </li></a>
+                    <a id="signout" class="dropdown_link"><li class="drop_item">
+                        <table><tbody>
+                            <tr><td><img src="/img/signout.png" alt="signout.png" /></td><td>Sign Out</td></tr>
+                        </tbody></table>
+                    </li></a>
+                </ul>
+                <ul id="signin" class="dropdown">
+                    <a class="dropdown_link" href="/signin"><li class="drop_item">
+                        <table><tbody>
+                            <tr><td><img src="/img/signin.png" alt="signin.png" /></td><td>Sign In with Google</td></tr>
+                        </tbody></table>
+                    </li></a>
+                </ul>
+            </div>
+        </div>
+
+        <table id="top_table">
+            <tbody>
+                <tr>
+                    <td>
+                        <a href="/"><img id="logo" src="/img/classifood_180x49.png" alt="logo.png" /></a>
+                        <a href="/"><img id="logo_icon" src="/img/classifood_icon_49x49.png" alt="logo_icon.png" /></a>
+                    </td>
+                    <td style="white-space:nowrap;">
+                        <form id="form" action="/search" method="GET">
+                            <input id="q" type="text" name="q" value="{{ search_term }}" />
+                            <input type="hidden" name="start" value="0" />
+                            <input id="search_btn" class="button" type="submit" value="" />
+                        </form>                        
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="search_top_filler"></div>
+{% endblock top %}
