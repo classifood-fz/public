@@ -35,7 +35,7 @@
             for (group_label in group_list) {
                 var group_title = document.createElement('span');
                 group_title.setAttribute('class', 'group_title');
-                group_title.innerText = group_label;
+                group_title.textContent = group_label;
                 group.appendChild(group_title);
                 group.appendChild(document.createElement('br'));
                 group.appendChild(document.createElement('br'));
@@ -46,7 +46,7 @@
                     var anchor = document.createElement('a');
                     anchor.setAttribute('class', 'always_blue');
                     anchor.setAttribute('href', '/search?q='+encodeURIComponent(group_list[group_label][i]));
-                    anchor.innerText = group_list[group_label][i];
+                    anchor.textContent = group_list[group_label][i];
                     group_item.appendChild(anchor);
                     group.appendChild(group_item);
                     group.appendChild(document.createElement('br'));
