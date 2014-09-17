@@ -43,7 +43,7 @@ function set_cookie(name, value, days, domain, path, secure) {
     // If params are undefined, set to default values
     days = (typeof days == 'number') ? days : 0;
     domain = (typeof domain == 'string') ? domain : '';
-    path = (typeof path == 'string') ? path : '';
+    path = (typeof path == 'string') ? path : '/';
     secure = (typeof secure == 'boolean') ? secure : false;
 
     var expires = '';
