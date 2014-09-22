@@ -12,6 +12,7 @@
         jQuery(document).ready(function() {           
             jQuery('#signout').click(function() {
                 delete_cookie('euid');
+                delete_cookie('session_id');
                 window.location.href='/';
             });
         });

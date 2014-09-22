@@ -16,14 +16,14 @@
 
             jQuery('#signout').click(function() {
                 delete_cookie('euid');
+                delete_cookie('session_id');
                 window.location.href = '/';
             });
 
             // Prevent empty queries
             jQuery('#search_btn').click(function() {
-                if (jQuery.trim(jQuery('#q').val()) == '') {
-                    return false;
-                }
+                if (jQuery.trim(jQuery('#q').val()) == '')
+                    return false;               
             });
         });
     </script>

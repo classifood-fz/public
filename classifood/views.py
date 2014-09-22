@@ -186,10 +186,21 @@ def authenticate(request):
                 is_paying = False,
                 refresh_token = refr_token)
             user.put()
-            
-        return HttpResponse(
-            json.dumps({"result": "success", "euid": crypto.encrypt(user.key.id())}), 
-            content_type='application/json')
+
+        session = label.create_session(user_id=user.key.id())
+        session_id = session['session_id'] if 'session_id' in session else None
+
+        if user and session_id:
+            response = HttpResponse(
+                json.dumps({"result": "success", "euid": crypto.encrypt(user.key.id())}), 
+                content_type='application/json')
+
+            response.set_signed_cookie('session_id', session_id)
+
+            return response
+
+        else:
+            return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
 """
@@ -236,30 +247,10 @@ def delete_shopping_list(request):
 Serves the web home page
 """
 def index(request):
-    label_error = False
-    session_id = request.get_signed_cookie('session_id', default=None)
-
-    # If no session_id, enerate new session_id
-    if not session_id:
-        user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
-        session = label.create_session(user_id=user_id) if user_id else label.create_session()
-
-        if 'session_id' in session:
-            session_id = session['session_id']
-        else:
-            label_error = True
-
-    response =  render_to_response(
+    return render_to_response(
         'index.html', 
-        {
-            'label_error': label_error,
-            'categories': mark_safe(json.dumps(categories.categories))
-        },
+        {'categories': mark_safe(json.dumps(categories.categories))},
         context_instance=RequestContext(request))
-
-    response.set_signed_cookie('session_id', session_id)
-
-    return response
 
 
 """
@@ -379,6 +370,7 @@ def search(request):
     mobile = request.GET.get('mobile', '')
     user = User.get_by_id(crypto.decrypt(request.COOKIES['euid'])) if 'euid' in request.COOKIES else None
     session_id = request.get_signed_cookie('session_id', default=None)
+    label_error = False
 
     if not session_id:
         session = label.create_session(user_id=user.key.id()) if user else label.create_session()
@@ -386,21 +378,20 @@ def search(request):
             session_id = session['session_id']
         else:
             label_error = True
+
+    if user and session_id:
+        # Set user's diet profile
+        label.set_profile(session_id, user)
     
     products = [] # list of product info dictionaries
     pages = [] # list of (page_start, page_label) tuples
     total_found = 0
-    label_error = False
 
     # If start is not an integer, set start to 0
     try:
         start = int(start)
     except ValueError:
         start = 0
-
-    if user and session_id:
-        # Set user's health profile
-        label.set_profile(session_id, user)
 
     if session_id:
         # Search products by keywords
@@ -558,7 +549,9 @@ def user_pantry(request):
             else:
                 label_error = True
 
-        label.set_profile(session_id, user)
+        if session_id:
+            # Set diet profile
+            label.set_profile(session_id, user)
 
         try:
             start = int(start)
@@ -662,7 +655,9 @@ def user_shopping_list(request):
             else:
                 label_error = True
 
-        label.set_profile(session_id, user)
+        if session_id:
+            # Set diet profile
+            label.set_profile(session_id, user)
 
         try:
             start = int(start)
