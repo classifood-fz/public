@@ -379,7 +379,7 @@ def search(request):
         else:
             label_error = True
 
-    if user and session_id:
+    if session_id:
         # Set user's diet profile
         label.set_profile(session_id, user)
     
