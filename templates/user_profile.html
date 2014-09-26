@@ -9,127 +9,139 @@
 {% block headjs2 %}
     <script type="text/javascript" src="/js/profile_utils.js"></script>
     <script>
-        var nutrient_count = {{ user.nutrients|length }};
-        var allergen_count = {{ user.allergens|length }};
-        var additive_count = {{ user.additives|length }};
-
         jQuery(document).ready(function() {
-            /* Take action on clicking add icons */
-            jQuery('#add_nutrient').click(function() {
-                add_nutrient(jQuery('#new_nutrient').val(), 'nutrient_'+(nutrient_count+1));
+            jQuery('.nutrient_container').on('click', '.list_item > .nutrient', function() {
+                var nutrient = jQuery(this).attr('name');
+                var parent = jQuery(this).parent();
+                var show_error = function() {
+                    jQuery('#nutrient_message').text('An error occurred. Please try again later.').show();
+                };
+                var on_added = function(returned_json) {
+                    if (returned_json['result'] == 'success') {
+                        jQuery('#nutrients1').append(parent).append('&nbsp;');
+                        jQuery('#nutrient_message').hide();
+                    } else show_error();                    
+                };
+                var on_removed = function(returned_json) {
+                    if (returned_json['result'] == 'success') {
+                        jQuery('#nutrients2').append(parent).append('&nbsp;');
+                        jQuery('#nutrient_message').hide();
+                    } else show_error();                    
+                };
+
+                jQuery(this).is(':checked') ? add_nutrient(nutrient, on_added, show_error) : remove_nutrient(nutrient, on_removed, show_error);
             });
 
-            jQuery('#add_allergen').click(function() {
-                add_allergen(jQuery('#new_allergen').val(), 'allergen_'+(allergen_count+1));
+            jQuery('.allergen_container').on('click', '.list_item > .allergen', function() {
+                var allergen = jQuery(this).attr('name');
+                var parent = jQuery(this).parent();
+                var show_error = function() {
+                    jQuery('#allergen_message').text('An error occurred. Please try again later.').show();
+                };
+                var on_added = function(returned_json) {
+                    if (returned_json['result'] == 'success') {
+                        jQuery('#allergens1').append(parent).append('&nbsp;');
+                        jQuery('#allergen_message').hide();
+                    } else show_error();
+                };
+                var on_removed = function(returned_json) {
+                    if (returned_json['result'] == 'success') {
+                        jQuery('#allergens2').append(parent).append('&nbsp;');
+                        jQuery('#allergen_message').hide();
+                    } else show_error();
+                };
+                
+                jQuery(this).is(':checked') ? add_allergen(allergen, on_added, show_error) : remove_allergen(allergen, on_removed, show_error);
             });
 
-            jQuery('#add_additive').click(function() {
-                add_additive(jQuery('#new_additive').val(), 'additive_'+(additive_count+1));
-            });
-
-            /* Take action on pressing 'Enter' while text is focused */
-            jQuery('#new_nutrient').keypress(function(event_obj) {
-                if (event_obj.which == 13) {
-                    add_nutrient(jQuery('#new_nutrient').val(), 'nutrient_'+(nutrient_count+1));
-                }
-            });
-
-            jQuery('#new_allergen').keypress(function(event_obj) {
-                if (event_obj.which == 13) {
-                    add_allergen(jQuery('#new_allergen').val(), 'allergen_'+(allergen_count+1));
-                }
-            });
-
-            jQuery('#new_additive').keypress(function(event_obj) {
-                if (event_obj.which == 13) {
-                    add_additive(jQuery('#new_additive').val(), 'additive_'+(additive_count+1));
-                }
+            jQuery('.additive_container').on('click', '.list_item > .additive', function() {
+                var additive = jQuery(this).attr('name');
+                var parent = jQuery(this).parent();
+                var show_error = function() {
+                    jQuery('#additive_message').text('An error occurred. Please try again later.').show();
+                };
+                var on_added = function(returned_json) {
+                    if (returned_json['result'] == 'success') {
+                        jQuery('#additives1').append(parent).append('&nbsp;');
+                        jQuery('#additive_message').hide();
+                    } else show_error();
+                };
+                var on_removed = function(returned_json) {
+                    if (returned_json['result'] == 'success') {
+                        jQuery('#additives2').append(parent).append('&nbsp;');
+                        jQuery('#additive_message').hide();
+                    } else show_error();
+                };
+                
+                jQuery(this).is(':checked') ? add_additive(additive, on_added, show_error) : remove_additive(additive, on_removed, show_error);
             });
         });
     </script>
 {% endblock headjs2 %}
 
 {% block section_icon %}
-<a href="/"><img id="logo_icon" src="/img/profile_49x49.png" alt="profile.png" /></a>
+    <a href="/"><img id="logo_icon" src="/img/profile_49x49.png" alt="profile.png" /></a>
 {% endblock section_icon %}
 
 {% block content_body %}
-    <p>A user may add or remove nutrients, allergens, and additives onto his/her profile to tailor search results. Adding too many parameters can slow down search performance. By default, each profile contains many nutrients, and one allergen to show as examples.</p>
+    <p>A user may add or remove nutrient, allergen, and additive flags onto his/her profile to tailor search results. Adding too many parameters may slow down search performance.</p>
 
     <h3>Nutrients</h3>
     <hr>
+    Select the nutrients you want to include in search results.<br><br>
 
-    <div id="nutrients" class="list_block">
+    <div id="nutrients1" class="nutrient_container">
         {% for nutrient in user.nutrients %}
-            <div id="nutrient_{{ forloop.counter }}" class="list_item">
-              {{ nutrient }}
-              <a onclick="remove_nutrient('{{ nutrient }}', 'nutrient_{{ forloop.counter }}');"><span class="subtract"></span></a>
-            </div>
-        {% empty %}
-            <span id="no_nutrients">You have not added any nutrients to your profile.</span>
+            <span class="list_item"><input class="nutrient" type="checkbox" name="{{ nutrient }}" checked /> {{ nutrient }}</span>
+        {% endfor %}        
+    </div>    
+    <div id="nutrients2" class="nutrient_container">
+        {% for nutrient in known_nutrients %}
+            {% if nutrient not in user.nutrients %}
+                <span class="list_item"><input class="nutrient" type="checkbox" name="{{ nutrient }}" /> {{ nutrient }}</span>
+            {% endif %}
         {% endfor %}
     </div>
-    <br>
-    <input id="new_nutrient" type="text" value="" />
-    <a id="add_nutrient"><span class="add"></span></a>
-    <span id="add_nutrient_message" class="errorlist hidden"></span>
-
-    <br><br>
-
-    Nutrient Examples: Calories, Total Fat, Cholesterol, Sodium, Potassium, Total Carbohydrate, Dietary Fiber, Sugars, Protein, Vitamin A, Vitamin C, Calcium, and Iron 
-
+    <span id="nutrient_message" class="errorlist hidden"></span>
     <br><br><br><br>
 
 
-    <h3>Allergens</h3>
+    <h3>Allergen Flags</h3>
     <hr>
+    Select any food allergens you want to flag.<br><br>
 
-    <div id="allergens" class="list_block">
+    <div id="allergens1" class="allergen_container">
         {% for allergen in user.allergens %}
-            <div id="allergen_{{ forloop.counter }}" class="list_item">
-                {{ allergen }}
-                <a onclick="remove_allergen('{{ allergen }}', 'allergen_{{ forloop.counter }}');"><span class="subtract"></span></a>
-            </div>
-        {% empty %}
-            <span id="no_allergens">You have not added any allergens to your profile.</span>
+            <span class="list_item"><input class="allergen" type="checkbox" name="{{ allergen }}" checked /> {{ allergen }}</span>
+        {% endfor %}        
+    </div>    
+    <div id="allergens2" class="allergen_container">
+        {% for allergen in known_allergens %}
+            {% if allergen not in user.allergens %}
+                <span class="list_item"><input class="allergen" type="checkbox" name="{{ allergen }}" /> {{ allergen }}</span>
+            {% endif %}
         {% endfor %}
     </div>
-    <br>
-    <input id="new_allergen" type="text" value="" />
-    <a id="add_allergen"><span class="add"></span></a>
-    <span id="add_allergen_message" class="errorlist hidden"></span>
-
-    <br><br>
-
-    Allergen Examples: Gluten, Wheat, Peanuts, Egg, Milk, and Fish
-
+    <span id="allergen_message" class="errorlist hidden"></span>
     <br><br><br><br>
 
 
-    <h3>Additives</h3>
+    <h3>Additive Flags</h3>
     <hr>
+    Select any food additives you want to flag.<br><br>
 
-    <div id="additives" class="list_block">
+    <div id="additives1" class="additive_container">
         {% for additive in user.additives %}
-            <div id="additive_{{ forloop.counter }}" class="list_item">
-                {{ additive }}
-                <a onclick="remove_additive('{{ additive }}', 'additive_{{ forloop.counter }}');"><span class="subtract"></span></a>
-            </div>
-        {% empty %}
-            <span id="no_additives">You have not added any additives to your profile.</span>
+            <span class="list_item"><input class="additive" type="checkbox" name="{{ additive }}" checked /> {{ additive }}</span>
+        {% endfor %}        
+    </div>    
+    <div id="additives2" class="additive_container">
+        {% for additive in known_additives %}
+            {% if additive not in user.additives %}
+                <span class="list_item"><input class="additive" type="checkbox" name="{{ additive }}" /> {{ additive }}</span>
+            {% endif %}
         {% endfor %}
     </div>
-    <br>
-    <input id="new_additive" type="text" value="" />
-    <a id="add_additive"><span class="add"></span></a>
-    <span id="add_additive_message" class="errorlist hidden"></span>
-
-    <br><br>
-
-    Additive Examples: Preservatives, Antioxidants, and Vegetable Gum
-
-    <br><br><br><br>
-
-    * Some nutrients, allergens, and additives may not be in our database.<br>
-    * Parameter names are case-sensitive (mostly capitalized) and plural-sensitive.<br>    
+    <span id="additive_message" class="errorlist hidden"></span>
+    <br><br><br><br>   
 {% endblock content_body %}

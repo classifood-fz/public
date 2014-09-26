@@ -10,28 +10,9 @@ h3 {
     margin: 4px 0;
 }
 
-.list_block {
-    padding: 4px;
-}
-
 .list_item {
     display: inline-block;
-    margin: 4px;
-    font-size: 18px;
-}
-
-.add {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    vertical-align: middle;
-    background-image: url('/img/add.png');
-}
-
-.subtract {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    vertical-align: middle;
-    background-image: url('/img/subtract.png');
+    width: 160px;
+    font-size: 16px;
+    white-space: nowrap;
 }

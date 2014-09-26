@@ -7,7 +7,7 @@ from django.utils import http
 from google.appengine.api import mail, users, images, urlfetch
 from google.appengine.ext import ndb, blobstore
 
-from classifood import label, utils, settings, crypto, amazon, categories
+from classifood import label, utils, settings, crypto, amazon, constants
 from classifood.models import User, Shopping_List_Product, Pantry_Product
 
 from oauth2client.client import OAuth2WebServerFlow, FlowExchangeError
@@ -249,7 +249,7 @@ Serves the web home page
 def index(request):
     return render_to_response(
         'index.html', 
-        {'categories': mark_safe(json.dumps(categories.categories))},
+        {'categories': mark_safe(json.dumps(constants.categories))},
         context_instance=RequestContext(request))
 
 
@@ -517,7 +517,7 @@ Returns a sitemap XML
 """
 def sitemap(request):
     return render_to_response(
-        'sitemap.xml', {'categories': categories.categories}, 
+        'sitemap.xml', {'categories': constants.categories}, 
         context_instance=RequestContext(request))
 
 
@@ -629,7 +629,14 @@ def user_profile(request):
         user = User.get_by_id(user_id)
 
         return render_to_response(
-            'user_profile.html', {'user': user}, context_instance=RequestContext(request))
+            'user_profile.html',
+            {
+                'user': user,
+                'known_nutrients': constants.known_nutrients,
+                'known_allergens': constants.known_allergens,
+                'known_additives': constants.known_additives
+            },
+            context_instance=RequestContext(request))
 
     else:
         return redirect('/signin')    
