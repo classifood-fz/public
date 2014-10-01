@@ -86,8 +86,7 @@ def set_profile(session_id, user=None):
         profile['nutrients'] = map(lambda x: {"name": x, "value": "true"}, user.nutrients)
         profile['allergens'] = map(lambda x: {"name": x, "value": "true"}, user.allergens)
         profile['additives'] = map(lambda x: {"name": x, "value": "true"}, user.additives)
-        profile['myingredients'] = map(lambda x: {"name": x[1], "ingredientid": x[0], "sameas": x[0], "value": "true"}, user.ingredients)
-        
+
     return call_api('POST', 'setprofile', body='api_key={0}&json={1}'.format(settings.LABEL_API_KEY, json.dumps(profile)))
 
 
@@ -110,7 +109,7 @@ def ingredient_search(session_id, search_term, length=10, start=0, data_format='
 """
 Adds an ingredient to user profile
 """
-def add_my_ingredient(session_id, ingredient_id, data_format='json'):
+def add_ingredient(session_id, ingredient_id, data_format='json'):
     params = {
         'api_key': settings.LABEL_API_KEY,
         'sid': session_id,
@@ -124,7 +123,7 @@ def add_my_ingredient(session_id, ingredient_id, data_format='json'):
 """
 Removes an ingredient from user profile
 """
-def remove_my_ingredient(session_id, ingredient_id, data_format='json'):
+def remove_ingredient(session_id, ingredient_id, data_format='json'):
     params = {
         'api_key': settings.LABEL_API_KEY,
         'sid': session_id,

@@ -35,7 +35,7 @@
                     if (returned_json.start+10 < returned_json.total_found)
                         jQuery('#search_results').append('&nbsp;<a onclick="before_search(); search_ingredients(\'%s\', %s, after_search, search_error);">Next</a>'.replace2('%s', [jQuery.trim(jQuery('#search_box').val()), returned_json.start+10]));
                     jQuery('#search_results').append('<br><br>');
-                    returned_json.ingredients.forEach(function(element, index, array) {
+                    returned_json.ingredients.forEach(function(element) {
                         jQuery('#search_results').append('<div><input class="ingredient" type="checkbox" name="%s" /> %s<input type="hidden" name="%s Id" value="%s" /></div>'.replace2('%s', [element.ingredient_name, element.ingredient_name, element.ingredient_name, element.ingredient_id]));
                     });
                 } else jQuery('#search_results').append('No ingredients were found.');

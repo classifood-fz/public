@@ -101,8 +101,8 @@ def add_ingredient(request):
             return HttpResponse('{"result": "exists"}', content_type='application/json')
 
         user.ingredients.append(pair)
-        set_profile = label.set_profile(session_id, user)
-        if 'result' in set_profile and set_profile['result']  == 'success':
+        status = label.add_ingredient(session_id, pair[0])
+        if 'result' in status and status['result']  == 'success':
             user.put()
             return HttpResponse('{"result": "success"}', content_type='application/json')
 
@@ -174,14 +174,17 @@ def authenticate(request):
                 refresh_token = refr_token)
             user.put()
 
-        session = label.create_session(user_id=user.key.id())
-        session_id = session['session_id'] if 'session_id' in session else None
-        set_profile = label.set_profile(session_id, user)
-  
-        if user and session_id and 'result' in set_profile and set_profile['result'] == 'success':
-            response = HttpResponse(
-                json.dumps({"result": "success", "euid": crypto.encrypt(user.key.id())}), 
-                content_type='application/json')
+        if user:
+            session = label.create_session(user_id=user.key.id())
+            session_id = session['session_id'] if 'session_id' in session else None
+
+            # Must set profile before adding ingredients
+            label.set_profile(session_id, user)
+
+            for ingredient in user.ingredients:
+                label.add_ingredient(session_id, ingredient[0])
+
+            response = HttpResponse(json.dumps({"result": "success", "euid": crypto.encrypt(user.key.id())}), content_type='application/json')
             response.set_signed_cookie('session_id', session_id)
             return response
         
@@ -308,8 +311,8 @@ def remove_ingredient(request):
 
     if session_id and user and pair in user.ingredients:
         user.ingredients.remove(pair)
-        set_profile = label.set_profile(session_id, user)
-        if 'result' in set_profile and set_profile['result']  == 'success':
+        status = label.remove_ingredient(session_id, pair[0])
+        if 'result' in status and status['result']  == 'success':
             user.put()
             return HttpResponse('{"result": "success"}', content_type='application/json')
 
@@ -411,6 +414,8 @@ def search(request):
 
             if 'productsArray' in prod_details:
                 product['details'] = prod_details['productsArray'][0]
+                product['contains'] = []
+                product['may_contain'] = []
 
                 # Get nutrient percentage value
                 for nutrient in product['details']['nutrients']:
@@ -419,6 +424,25 @@ def search(request):
                             nutrient['percentage_value'] = '{:.0%}'.format(float(nutrient['nutrient_value']) * settings.UNIT_MULTIPLIER[nutrient['nutrient_uom']] / settings.DAILY_VALUES[nutrient['nutrient_name']][1])
                         except ValueError:
                             nutrient['percentage_value'] = ''
+
+                for allergen in product['details']['allergens']:
+                    if allergen['allergen_value'] == '2':
+                        product['contains'].append(allergen['allergen_name'])
+                    elif allergen['allergen_value'] == '1':
+                        product['may_contain'].append(allergen['allergen_name'])
+
+                for additive in product['details']['additives']:
+                    if additive['additive_value'] == '2':
+                        product['contains'].append(additive['additive_name'])
+                    elif additive['additive_value'] == '1':
+                        product['may_contain'].append(additive['additive_name'])
+
+                for ingredient in product['details']['procingredients']:
+                    if ingredient['value'] == 2:
+                        product['contains'].append(ingredient['name'])
+                    elif ingredient['value'] == 1:
+                        product['may_contain'].append(ingredient['name'])
+
             else:
                 label_error = True
                 break
@@ -584,6 +608,8 @@ def user_pantry(request):
             if 'productsArray' in prod_details:
                 products.append(prod_details['productsArray'][0])
                 length += 1
+                products[length-1]['contains'] = []
+                products[length-1]['may_contain'] = []
 
                 # Get nutrient percentage value
                 for nutrient in products[length-1]['nutrients']:
@@ -592,6 +618,25 @@ def user_pantry(request):
                             nutrient['percentage_value'] = '{:.0%}'.format(float(nutrient['nutrient_value']) * settings.UNIT_MULTIPLIER[nutrient['nutrient_uom']] / settings.DAILY_VALUES[nutrient['nutrient_name']][1])
                         except ValueError:
                             nutrient['percentage_value'] = ''
+
+                for allergen in products[length-1]['allergens']:
+                    if allergen['allergen_value'] == '2':
+                        products[length-1]['contains'].append(allergen['allergen_name'])
+                    elif allergen['allergen_value'] == '1':
+                        products[length-1]['may_contain'].append(allergen['allergen_name'])
+
+                for additive in products[length-1]['additives']:
+                    if additive['additive_value'] == '2':
+                        products[length-1]['contains'].append(additive['additive_name'])
+                    elif additive['additive_value'] == '1':
+                        products[length-1]['may_contain'].append(additive['additive_name'])
+
+                for ingredient in products[length-1]['procingredients']:
+                    if ingredient['value'] == 2:
+                        products[length-1]['contains'].append(ingredient['name'])
+                    elif ingredient['value'] == 1:
+                        products[length-1]['may_contain'].append(ingredient['name'])
+
             else:
                 label_error=True
                 break
@@ -679,6 +724,8 @@ def user_shopping_list(request):
             if 'productsArray' in prod_details:
                 products.append(prod_details['productsArray'][0])
                 length += 1
+                products[length-1]['contains'] = []
+                products[length-1]['may_contain'] = []
 
                 # Get nutrient percentage value
                 for nutrient in products[length-1]['nutrients']:
@@ -687,6 +734,25 @@ def user_shopping_list(request):
                             nutrient['percentage_value'] = '{:.0%}'.format(float(nutrient['nutrient_value']) * settings.UNIT_MULTIPLIER[nutrient['nutrient_uom']] / settings.DAILY_VALUES[nutrient['nutrient_name']][1])
                         except ValueError:
                             nutrient['percentage_value'] = ''
+
+                for allergen in products[length-1]['allergens']:
+                    if allergen['allergen_value'] == '2':
+                        products[length-1]['contains'].append(allergen['allergen_name'])
+                    elif allergen['allergen_value'] == '1':
+                        products[length-1]['may_contain'].append(allergen['allergen_name'])
+
+                for additive in products[length-1]['additives']:
+                    if additive['additive_value'] == '2':
+                        products[length-1]['contains'].append(additive['additive_name'])
+                    elif additive['additive_value'] == '1':
+                        products[length-1]['may_contain'].append(additive['additive_name'])
+
+                for ingredient in products[length-1]['procingredients']:
+                    if ingredient['value'] == 2:
+                        products[length-1]['contains'].append(ingredient['name'])
+                    elif ingredient['value'] == 1:
+                        products[length-1]['may_contain'].append(ingredient['name'])
+
             else:
                 label_error=True
                 break

@@ -55,47 +55,49 @@
         <div id="product_{{ forloop.counter }}">
             Added {{ product.t_delta }} ago<br><br>
 
-            <span class="product_name">
+            <div class="product_name">
                 {{ product.product_name }}
                 {% if product.product_size %}
                     {{ product.product_size }}
                 {% endif %}
-            </span>
 
-            {% for allergen in product.allergens %}
-                {% if allergen.allergen_value == '2' %}
-                    <span class="contains">Contains {{ allergen.allergen_name }}</span>
-                {% elif allergen.allergen_value == '1' %}
-                    <span class="may_contain">May Contain {{ allergen.allergen_name }}</span>
-                {% endif %}
-            {% endfor %}
-
-            {% for additive in product.additives %}
-                {% if additive.additive_value == '2' %}
-                    <span class="contains">Contains {{ additive.additive_name }}</span>
-                {% elif additive.additive_value == '1' %}
-                    <span class="may_contain">May Contain {{ additive.additive_name }}</span>
-                {% endif %}
-            {% endfor %} 
-
-            {% for ingredient in product.procingredients %}
-                {% if ingredient.value == 2 %}
-                    <span class="contains">Contains {{ ingredient.name }}</span>
-                {% elif ingredient.value == 1 %}
-                    <span class="may_contain">May Contain {{ ingredient.name }}</span>
-                {% endif %}
-            {% endfor %}
-
-            <div id="buttons_{{ forloop.counter }}" class="buttons">
-                <a id="remove_shopping_{{ forloop.counter }}" class="{% if not product.on_shopping_list %}hidden{% endif %}" title="Remove from shopping list" onclick="remove_from_shopping_list('{{ product.upc }}', function(returned_json){if (returned_json.result == 'success') swap_shopping_buttons('{{ forloop.counter }}')});"><img class="img_btn" src="/img/full_cart.png" /></a>
-                <a id="add_shopping_{{ forloop.counter }}" class="{% if product.on_shopping_list %}hidden{% endif %}" title="Add to shopping list" onclick="add_to_shopping_list('{{ product.upc }}', function(returned_json){if (returned_json.result == 'success' || returned_json.result == 'found') swap_shopping_buttons('{{ forloop.counter }}')});"><img class="img_btn" src="/img/empty_cart.png" /></a>
-                <a id="remove_pantry_{{ forloop.counter }}" title="Remove from pantry" onclick="remove_from_pantry('{{ product.upc }}', function(returned_json){hide_product('{{ forloop.counter }}')});"><img class="img_btn" src="/img/full_pantry.png" /></a>
+                <div id="buttons_{{ forloop.counter }}" class="buttons">
+                    <a id="remove_shopping_{{ forloop.counter }}" class="{% if not product.on_shopping_list %}hidden{% endif %}" title="Remove from shopping list" onclick="remove_from_shopping_list('{{ product.upc }}', function(returned_json){if (returned_json.result == 'success') swap_shopping_buttons('{{ forloop.counter }}')});"><img class="img_btn" src="/img/full_cart.png" /></a>
+                    <a id="add_shopping_{{ forloop.counter }}" class="{% if product.on_shopping_list %}hidden{% endif %}" title="Add to shopping list" onclick="add_to_shopping_list('{{ product.upc }}', function(returned_json){if (returned_json.result == 'success' || returned_json.result == 'found') swap_shopping_buttons('{{ forloop.counter }}')});"><img class="img_btn" src="/img/empty_cart.png" /></a>
+                    <a id="remove_pantry_{{ forloop.counter }}" title="Remove from pantry" onclick="remove_from_pantry('{{ product.upc }}', function(returned_json){hide_product('{{ forloop.counter }}')});"><img class="img_btn" src="/img/full_pantry.png" /></a>
+                </div>
             </div>
+
+            {% if product.shelf %}
+                <div class="shelf">{{ product.shelf }}</div>
+            {% endif %}
 
             <br>
 
-            {% if product.shelf %}
-                <span class="shelf">{{ product.shelf }}</span><br>
+            {% if product.contains %}
+                <div class="contains">
+                    Contains:
+                    {% for item in product.contains %}
+                        {% if forloop.last %}
+                            {{ item }}
+                        {% else %}
+                            {{ item }},
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if product.may_contain %}
+                <div class="may_contain">
+                    May Contain:
+                    {% for item in product.may_contain %}
+                        {% if forloop.last %}
+                            {{ item }}
+                        {% else %}
+                            {{ item }},
+                        {% endif %}
+                    {% endfor %}
+                </div>
             {% endif %}
 
             <br>
