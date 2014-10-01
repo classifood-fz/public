@@ -11,13 +11,16 @@ import json
 """
 Builds url and calls API
 """
-def call_api(http_method, api_method, params):
-    # Convert params to url-encoded string pairs
-    pairs = map(lambda pair: http.urlencode({pair[0]: pair[1]}), params.items())
-    url = "http://%s/%s?%s" % (settings.LABEL_API_HOST, api_method, '&'.join(pairs))
+def call_api(http_method, api_method, params=None, body=None):
+    url = "http://{0}/{1}".format(settings.LABEL_API_HOST, api_method)
 
+    if params:
+        # Convert params to url-encoded string pairs
+        pairs = map(lambda pair: http.urlencode({pair[0]: pair[1]}), params.items())
+        url += '?' + '&'.join(pairs)
+    
     try:        
-        response = urlfetch.fetch(url, method=http_method, deadline=5)
+        response = urlfetch.fetch(url, payload=body, method=http_method, deadline=5)
 
     except urlfetch.InvalidURLError:
         return {'error': 'InvalidUrlError'}
@@ -79,18 +82,13 @@ def set_profile(session_id, user=None):
     profile['session_id'] = session_id
 
     # Customize profile according to user-entered parameters
-    if user:        
+    if user:
         profile['nutrients'] = map(lambda x: {"name": x, "value": "true"}, user.nutrients)
         profile['allergens'] = map(lambda x: {"name": x, "value": "true"}, user.allergens)
         profile['additives'] = map(lambda x: {"name": x, "value": "true"}, user.additives)
-#        profile['myingredients'] = user.ingredients
-
-    params = {
-        'api_key': settings.LABEL_API_KEY,
-        'json': json.dumps(profile)
-    }
-
-    return call_api('POST', 'setprofile', params)
+        profile['myingredients'] = map(lambda x: {"name": x[1], "ingredientid": x[0], "sameas": x[0], "value": "true"}, user.ingredients)
+        
+    return call_api('POST', 'setprofile', body='api_key={0}&json={1}'.format(settings.LABEL_API_KEY, json.dumps(profile)))
 
 
 """

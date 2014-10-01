@@ -42,3 +42,26 @@ function add_additive(additive, success_callback, error_callback) {
 function remove_additive(additive, success_callback, error_callback) {
     ajax('/remove_additive', {'additive': additive}, success_callback, error_callback);
 }
+
+function add_ingredient(ingredient_id, ingredient_name, success_callback, error_callback) {
+    ajax('/add_ingredient', {'ingredient_id': ingredient_id, 'ingredient_name': ingredient_name}, success_callback, error_callback);
+}
+
+function remove_ingredient(ingredient_id, ingredient_name, success_callback, error_callback) {
+    ajax('/remove_ingredient', {'ingredient_id': ingredient_id, 'ingredient_name': ingredient_name}, success_callback, error_callback);
+}
+
+function search_ingredients(ingredient, start, success_callback, error_callback) {
+    jQuery.ajax({
+        type: 'GET',
+        url: '/search_ingredients',
+        dataType: 'json',
+        data: {'ingredient': ingredient, 'start': start},
+        success: function(returned_json, status, jqxhr) {
+            success_callback(returned_json);
+        },
+        error: function(jqxhr, status, error) {
+            error_callback();
+        }
+    });
+}

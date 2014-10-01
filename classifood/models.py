@@ -7,9 +7,10 @@ class User(ndb.Model):
     allergens = ndb.JsonProperty(indexed=False)
     additives = ndb.JsonProperty(indexed=False)
     ingredients = ndb.JsonProperty(indexed=False)
-    is_admin = ndb.BooleanProperty(indexed=True)
-    is_advertiser = ndb.BooleanProperty(indexed=True)
-    is_paying = ndb.BooleanProperty(indexed=True)
+    is_admin = ndb.BooleanProperty(indexed=True, default=False)
+    is_advertiser = ndb.BooleanProperty(indexed=True, default=False)
+    is_paying = ndb.BooleanProperty(indexed=True, default=False)
+    pay_datetime = ndb.DateTimeProperty(indexed=True, default=None)
     refresh_token = ndb.StringProperty(indexed=True)
 
 class Shopping_List_Product(ndb.Model):

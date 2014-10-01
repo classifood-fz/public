@@ -2,10 +2,9 @@ from django.shortcuts import render_to_response, redirect
 from django.utils.safestring import mark_safe
 from django.template import RequestContext
 from django.http import HttpResponse
-from django.utils import http
 
-from google.appengine.api import mail, users, images, urlfetch
-from google.appengine.ext import ndb, blobstore
+from google.appengine.api import mail, users
+from google.appengine.ext import ndb
 
 from classifood import label, utils, settings, crypto, amazon, constants
 from classifood.models import User, Shopping_List_Product, Pantry_Product
@@ -23,79 +22,91 @@ import json
 Returns the about page
 """
 def about(request):
-    return render_to_response('about.html', {})
+    return render_to_response('about.html')
 
 
 """
 Adds an additive to a user's additive list
 """
 def add_additive(request):
+    session_id = request.get_signed_cookie('session_id', default=None)
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     user = User.get_by_id(user_id) if user_id else None
     additive = request.POST.get('additive', '')
-    description = label.get_property_description('additive', additive)
 
-    if user and additive and additive not in user.additives and description and 'error' not in description:
+    if session_id and user and additive and additive not in user.additives:
         user.additives.append(additive)
-        user.put()
-        return HttpResponse('{"result": "success"}', content_type='application/json')
+        set_profile = label.set_profile(session_id, user)
+        if 'result' in set_profile and set_profile['result']  == 'success':
+            user.put()
+            return HttpResponse('{"result": "success"}', content_type='application/json')
 
-    elif user and additive and additive not in user.additives and not description:
-        return HttpResponse('{"result": "not found"}', content_type='application/json')
-
-    elif user and additive and additive in user.additives:
-        return HttpResponse('{"result": "exists"}', content_type='application/json')
-
-    else:
-        return HttpResponse('{"result": "failure"}', content_type='application/json')
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
 """
 Adds an allergen to a user's allergen list
 """
 def add_allergen(request):
+    session_id = request.get_signed_cookie('session_id', default=None)
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     user = User.get_by_id(user_id) if user_id else None
     allergen = request.POST.get('allergen', '')
-    description = label.get_property_description('allergen', allergen)
 
-    if user and allergen and allergen not in user.allergens and description and 'error' not in description:
+    if session_id and user and allergen and allergen not in user.allergens:
         user.allergens.append(allergen)
-        user.put()
-        return HttpResponse('{"result": "success"}', content_type='application/json')
+        set_profile = label.set_profile(session_id, user)
+        if 'result' in set_profile and set_profile['result']  == 'success':
+            user.put()
+            return HttpResponse('{"result": "success"}', content_type='application/json')
 
-    elif user and allergen and allergen not in user.allergens and not description:
-        return HttpResponse('{"result": "not found"}', content_type='application/json')
-
-    elif user and allergen and allergen in user.allergens:
-        return HttpResponse('{"result": "exists"}', content_type='application/json')
-
-    else:
-        return HttpResponse('{"result": "failure"}', content_type='application/json')
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
 """
 Adds a nutrient to a user's nutrient list
 """
 def add_nutrient(request):
+    session_id = request.get_signed_cookie('session_id', default=None)
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     user = User.get_by_id(user_id) if user_id else None
     nutrient = request.POST.get('nutrient', '')
-    description = label.get_property_description('nutrient', nutrient)
 
-    if user and nutrient and nutrient not in user.nutrients and description and 'error' not in description:
+    if session_id and user and nutrient and nutrient not in user.nutrients:
         user.nutrients.append(nutrient)
-        user.put()
-        return HttpResponse('{"result": "success"}', content_type='application/json')
+        set_profile = label.set_profile(session_id, user)
+        if 'result' in set_profile and set_profile['result']  == 'success':
+            user.put()
+            return HttpResponse('{"result": "success"}', content_type='application/json')
 
-    elif user and nutrient and nutrient not in user.nutrients and not description:
-            return HttpResponse('{"result": "not found"}', content_type='application/json')
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
-    elif user and nutrient and nutrient in user.nutrients:
-        return HttpResponse('{"result": "exists"}', content_type='application/json')
 
-    else:
+"""
+Adds an ingredient to a user's ingredient list
+"""
+def add_ingredient(request):
+    session_id = request.get_signed_cookie('session_id', default=None)
+    user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
+    user = User.get_by_id(user_id) if user_id else None
+    pair = [request.POST.get('ingredient_id', ''), request.POST.get('ingredient_name', '')]
+
+    try:
+        pair[0] = int(pair[0])
+    except ValueError:
         return HttpResponse('{"result": "failure"}', content_type='application/json')
+
+    if session_id and user and pair[0] and pair[1]:
+        if pair in user.ingredients:
+            return HttpResponse('{"result": "exists"}', content_type='application/json')
+
+        user.ingredients.append(pair)
+        set_profile = label.set_profile(session_id, user)
+        if 'result' in set_profile and set_profile['result']  == 'success':
+            user.put()
+            return HttpResponse('{"result": "success"}', content_type='application/json')
+
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
 """
@@ -111,12 +122,8 @@ def add_to_pantry(request):
             Pantry_Product.barcode == barcode).get(keys_only=True):
         Pantry_Product(user_id = user_id, barcode = barcode).put()
         return HttpResponse('{"result": "success"}', content_type='application/json')
-
-    elif user and barcode:
-        return HttpResponse('{"result": "found"}', content_type='application/json')
-
-    else:
-        return HttpResponse('{"result": "failure"}', content_type='application/json')
+        
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
 """
@@ -133,11 +140,7 @@ def add_to_shopping_list(request):
         Shopping_List_Product(user_id = user_id, barcode = barcode).put()
         return HttpResponse('{"result": "success"}', content_type='application/json')
 
-    elif user and barcode:
-        return HttpResponse('{"result": "found"}', content_type='application/json')
-
-    else:
-        return HttpResponse('{"result": "failure"}', content_type='application/json')
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
 """
@@ -164,53 +167,32 @@ def authenticate(request):
             user = User(
                 id = credentials['id_token']['sub'],
                 email = credentials['id_token']['email'],
-                nutrients = [
-                    'Calories',
-                    'Total Fat',
-                    'Cholesterol',
-                    'Sodium',
-                    'Potassium',
-                    'Total Carbohydrate',
-                    'Dietary Fiber',
-                    'Sugars',
-                    'Protein',
-                    'Vitamin A',
-                    'Vitamin C',
-                    'Calcium'
-                ],
-                allergens = ['Gluten'],
-                additives = [],
-                ingredients = [],
-                is_admin = False,
-                is_advertiser = False,
-                is_paying = False,
+                nutrients = map(lambda x: x['name'], settings.LABEL_DEFAULT_PROFILE['nutrients']),
+                allergens = map(lambda x: x['name'], settings.LABEL_DEFAULT_PROFILE['allergens']),
+                additives = map(lambda x: x['name'], settings.LABEL_DEFAULT_PROFILE['additives']),
+                ingredients = map(lambda x: [x['ingredientid'], x['name']], settings.LABEL_DEFAULT_PROFILE['myingredients']),
                 refresh_token = refr_token)
             user.put()
 
         session = label.create_session(user_id=user.key.id())
         session_id = session['session_id'] if 'session_id' in session else None
-
-        if user and session_id:
+        set_profile = label.set_profile(session_id, user)
+  
+        if user and session_id and 'result' in set_profile and set_profile['result'] == 'success':
             response = HttpResponse(
                 json.dumps({"result": "success", "euid": crypto.encrypt(user.key.id())}), 
                 content_type='application/json')
-
             response.set_signed_cookie('session_id', session_id)
-
             return response
-
-        else:
-            return HttpResponse('{"result": "failure"}', content_type='application/json')
+        
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
 """
 Returns the contact form page.
 """
 def contact(request):
-    return render_to_response(
-        'contact.html',
-        {'recaptcha_public_key': settings.RECAPTCHA_PUBLIC_KEY},
-        context_instance=RequestContext(request))
+    return render_to_response('contact.html', {'recaptcha_public_key': settings.RECAPTCHA_PUBLIC_KEY}, RequestContext(request))
 
 
 """
@@ -220,12 +202,10 @@ def delete_pantry(request):
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
 
     if user_id:
-        user = User.get_by_id(user_id)
         Pantry_Product.query(Pantry_Product.user_id == user_id).map(lambda key: key.delete(), keys_only=True)
         return redirect('/user/pantry')
 
-    else:
-        return redirect('/')
+    return redirect('/')
 
 
 """
@@ -235,81 +215,105 @@ def delete_shopping_list(request):
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
 
     if user_id:
-        user = User.get_by_id(user_id)
         Shopping_List_Product.query(Shopping_List_Product.user_id == user_id).map(lambda key: key.delete(), keys_only=True)
         return redirect('/user/shopping_list')
-
-    else:
-        return redirect('/')
+ 
+    return redirect('/')
 
 
 """
 Serves the web home page
 """
-def index(request):
-    return render_to_response(
-        'index.html', 
-        {'categories': mark_safe(json.dumps(constants.categories))},
-        context_instance=RequestContext(request))
+def index(request):    
+    return render_to_response('index.html', {'categories': mark_safe(json.dumps(constants.categories))}, RequestContext(request))
 
 
 """
 Returns the privacy policy page
 """
 def privacy_policy(request):
-    return render_to_response(
-        'privacy_policy.html', {}, context_instance=RequestContext(request))
+    return render_to_response('privacy_policy.html')
 
 
 """
 Removes an additive from a user's additive list
 """
 def remove_additive(request):
+    session_id = request.get_signed_cookie('session_id', default=None)
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     user = User.get_by_id(user_id) if user_id else None
     additive = request.POST.get('additive', '')
 
-    if user and additive in user.additives:
+    if session_id and user and additive in user.additives:
         user.additives.remove(additive)
-        user.put()
-        return HttpResponse('{"result": "success"}', content_type='application/json')
+        set_profile = label.set_profile(session_id, user)
+        if 'result' in set_profile and set_profile['result']  == 'success':
+            user.put()
+            return HttpResponse('{"result": "success"}', content_type='application/json')
 
-    else:
-        return HttpResponse('{"result": "failure"}', content_type='application/json')
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
 """
 Removes an allergen from a user's allergen list
 """
 def remove_allergen(request):
+    session_id = request.get_signed_cookie('session_id', default=None)
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     user = User.get_by_id(user_id) if user_id else None
     allergen = request.POST.get('allergen', '')
 
-    if user and allergen in user.allergens:
+    if session_id and user and allergen in user.allergens:
         user.allergens.remove(allergen)
-        user.put()
-        return HttpResponse('{"result": "success"}', content_type='application/json')
+        set_profile = label.set_profile(session_id, user)
+        if 'result' in set_profile and set_profile['result']  == 'success':
+            user.put()
+            return HttpResponse('{"result": "success"}', content_type='application/json')
 
-    else:
-        return HttpResponse('{"result": "failure"}', content_type='application/json')
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
 """
 Removes a nutrient from a user's nutrient list
 """
 def remove_nutrient(request):
+    session_id = request.get_signed_cookie('session_id', default=None)
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     user = User.get_by_id(user_id) if user_id else None
     nutrient = request.POST.get('nutrient', '')
 
-    if user and nutrient in user.nutrients:
+    if session_id and user and nutrient in user.nutrients:
         user.nutrients.remove(nutrient)
-        user.put()
-        return HttpResponse('{"result": "success"}', content_type='application/json')
+        set_profile = label.set_profile(session_id, user)
+        if 'result' in set_profile and set_profile['result']  == 'success':
+            user.put()
+            return HttpResponse('{"result": "success"}', content_type='application/json')
 
-    else:
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
+
+
+"""
+Removes an ingredient from a user's ingredient list
+"""
+def remove_ingredient(request):
+    session_id = request.get_signed_cookie('session_id', default=None)
+    user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
+    user = User.get_by_id(user_id) if user_id else None
+    pair = [request.POST.get('ingredient_id', ''), request.POST.get('ingredient_name', '')]
+
+    try:
+        pair[0] = int(pair[0])
+    except ValueError:
         return HttpResponse('{"result": "failure"}', content_type='application/json')
+
+    if session_id and user and pair in user.ingredients:
+        user.ingredients.remove(pair)
+        set_profile = label.set_profile(session_id, user)
+        if 'result' in set_profile and set_profile['result']  == 'success':
+            user.put()
+            return HttpResponse('{"result": "success"}', content_type='application/json')
+
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
 """
@@ -319,17 +323,15 @@ def remove_from_pantry(request):
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     barcode = request.POST.get('barcode', '')
 
-    if User.get_by_id(user_id) and barcode:
+    if user_id and barcode:
         # Should get 1 key only
         Pantry_Product.query(
             Pantry_Product.user_id == user_id,
             Pantry_Product.barcode == barcode
         ).map(lambda key: key.delete(), keys_only=True)
-
         return HttpResponse('{"result": "success"}', content_type='application/json')
 
-    else:
-        return HttpResponse('{"result": "failure"}', content_type='application/json')
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
 """
@@ -339,17 +341,15 @@ def remove_from_shopping_list(request):
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     barcode = request.POST.get('barcode', '')
 
-    if User.get_by_id(user_id) and barcode:
+    if user_id and barcode:
         # Should get 1 key only
         Shopping_List_Product.query(
             Shopping_List_Product.user_id == user_id,
             Shopping_List_Product.barcode == barcode
         ).map(lambda key: key.delete(), keys_only=True)
-
         return HttpResponse('{"result": "success"}', content_type='application/json')
-
-    else:
-        return HttpResponse('{"result": "failure"}', content_type='application/json')
+    
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
 """
@@ -357,8 +357,7 @@ Returns do-not-crawl messages to web-crawler programs for
 development and test environments
 """
 def robots(request):
-    return render_to_response(
-        'robots.txt', {}, context_instance=RequestContext(request))
+    return render_to_response('robots.txt')
 
 
 """
@@ -373,15 +372,12 @@ def search(request):
     label_error = False
 
     if not session_id:
-        session = label.create_session(user_id=user.key.id()) if user else label.create_session()
+        session = label.create_session()
         if 'session_id' in session:
             session_id = session['session_id']
+            label.set_profile(session_id)
         else:
             label_error = True
-
-    if session_id:
-        # Set user's diet profile
-        label.set_profile(session_id, user)
     
     products = [] # list of product info dictionaries
     pages = [] # list of (page_start, page_label) tuples
@@ -440,7 +436,7 @@ def search(request):
                     Pantry_Product.barcode == product['upc']
             ).get(keys_only=True):
                 product['in_pantry'] = 'true'
-        
+
     response = render_to_response(
         'search.html', 
         {
@@ -452,12 +448,42 @@ def search(request):
             'total_found': total_found,
             'label_error': label_error
         },
-        context_instance=RequestContext(request))
+        RequestContext(request))
 
     response.set_signed_cookie('session_id', session_id)
 
     return response
 
+
+"""
+Searches Label API for ingredients by name and returns JSON
+"""
+def search_ingredients(request):
+    user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
+    session_id = request.get_signed_cookie('session_id', default=None)
+    search_term = request.GET.get('ingredient', '')
+
+    if user_id and session_id and search_term:
+        start = request.GET.get('start', '0')
+        try:
+            start = int(start)
+        except ValueError:
+            start = 0
+
+        search_result = label.ingredient_search(session_id, search_term, start=start)
+
+        if 'error' not in search_result:
+            return HttpResponse(
+                json.dumps(
+                    {
+                        'result': 'success',
+                        'start': start,
+                        'total_found': search_result['numFound'],
+                        'ingredients': search_result['arrayIngredients']
+                    }), 
+                content_type='application/json')
+    
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 """
 Verifies reCaptcha and sends email to the designated email
@@ -500,33 +526,28 @@ def send_contact_message(request):
 
         return HttpResponse('sent', content_type='text/plain')
 
-    else:
-        return HttpResponse('recaptcha_failed', content_type='text/plain')
+    return HttpResponse('recaptcha_failed', content_type='text/plain')
 
 
 """
 Returns user signin page
 """
 def signin(request):
-    return render_to_response(
-        'signin.html', {}, context_instance=RequestContext(request))
+    return render_to_response('signin.html', context_instance=RequestContext(request))
 
 
 """
 Returns a sitemap XML
 """
 def sitemap(request):
-    return render_to_response(
-        'sitemap.xml', {'categories': constants.categories}, 
-        context_instance=RequestContext(request))
+    return render_to_response('sitemap.xml', {'categories': constants.categories}, RequestContext(request))
 
 
 """
 Returns the terms of service page
 """
 def terms_of_service(request):
-    return render_to_response(
-        'terms_of_service.html', {}, context_instance=RequestContext(request))
+    return render_to_response('terms_of_service.html')
 
 
 """
@@ -534,24 +555,12 @@ Returns the user pantry page
 """
 def user_pantry(request):
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
-    
-    if user_id:
+    session_id = request.get_signed_cookie('session_id', default=None)
+
+    if user_id and session_id:
         user = User.get_by_id(user_id)
         start = request.GET.get('start', '0')
-        session_id = request.get_signed_cookie('session_id', default=None)
         label_error = False
-
-        if not session_id:
-            session = label.create_session(user_id=user_id)
-
-            if 'session_id' in session:
-                session_id = session['session_id']
-            else:
-                label_error = True
-
-        if session_id:
-            # Set diet profile
-            label.set_profile(session_id, user)
 
         try:
             start = int(start)
@@ -599,7 +608,7 @@ def user_pantry(request):
 
         pages = get_pages(start, total)
 
-        response =  render_to_response(
+        return render_to_response(
             'user_pantry.html',
             {
                 'products': products,
@@ -609,14 +618,9 @@ def user_pantry(request):
                 'pages': pages,
                 'label_error': label_error,
             },
-            context_instance=RequestContext(request))
+            RequestContext(request))
 
-        response.set_signed_cookie('session_id', session_id)
-
-        return response
-
-    else:
-        return redirect('/signin')
+    return redirect('/signin')
 
 
 """
@@ -636,10 +640,9 @@ def user_profile(request):
                 'known_allergens': constants.known_allergens,
                 'known_additives': constants.known_additives
             },
-            context_instance=RequestContext(request))
+            RequestContext(request))
 
-    else:
-        return redirect('/signin')    
+    return redirect('/signin')    
 
 
 """
@@ -647,24 +650,12 @@ Returns the user shopping list
 """
 def user_shopping_list(request):
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
+    session_id = request.get_signed_cookie('session_id', default=None)
     
-    if user_id:
+    if user_id and session_id:
         user = User.get_by_id(user_id)
         start = request.GET.get('start', '0')
-        session_id = request.get_signed_cookie('session_id', default=None)
         label_error = False
-
-        if not session_id:
-            session = label.create_session(user_id=user_id)
-
-            if 'session_id' in session:
-                session_id = session['session_id']
-            else:
-                label_error = True
-
-        if session_id:
-            # Set diet profile
-            label.set_profile(session_id, user)
 
         try:
             start = int(start)
@@ -698,6 +689,7 @@ def user_shopping_list(request):
                             nutrient['percentage_value'] = ''
             else:
                 label_error=True
+                break
 
             # Check if product is on user shopping list
             if Pantry_Product.query(
@@ -711,7 +703,7 @@ def user_shopping_list(request):
 
         pages = get_pages(start, total)
 
-        response =  render_to_response(
+        return render_to_response(
             'user_shopping_list.html',
             {
                 'products': products,
@@ -721,28 +713,23 @@ def user_shopping_list(request):
                 'pages': pages,
                 'label_error': label_error,
             },
-            context_instance=RequestContext(request))
+            RequestContext(request))
 
-        response.set_signed_cookie('session_id', session_id)
-
-        return response
-
-    else:
-        return redirect('/signin')
+    return redirect('/signin')
 
 
 """
 Returns the 404 error - not found - page
 """
 def err404(request):
-    return render_to_response('404.html', {})
+    return render_to_response('404.html')
 
 
 """
 Returns the 500 error - internal server error - page
 """
 def err500(request):
-    return render_to_response('500.html', {})
+    return render_to_response('500.html')
 
 
 """
