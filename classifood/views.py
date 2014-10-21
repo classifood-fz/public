@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from google.appengine.api import mail, users
 from google.appengine.ext import ndb
 
-from classifood import label, utils, settings, crypto, amazon, constants
+from classifood import label, utils, settings, crypto, constants
 from classifood.models import User, Shopping_List_Product, Pantry_Product
 
 from oauth2client.client import OAuth2WebServerFlow, FlowExchangeError
