@@ -2,12 +2,10 @@
  * Writes test cookie, then deletes test cookie
  */
 function browser_accepts_cookies() {
-    document.cookie = 'test_cookie=1; path=/';
+    set_cookie('test_cookie', 1, 1);
 
-    if (document.cookie.indexOf('test_cookie') != -1) {
-        var expired_date = new Date();
-        expired_date.setTime(expired_date.getTime());             
-        document.cookie = 'test_cookie=1; path=/; expires=' + expired_date.toGMTString();
+    if (get_cookie('test_cookie') != null) {
+        delete_cookie('test_cookie');
         return true;
     }
 
