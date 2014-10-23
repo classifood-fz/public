@@ -76,35 +76,41 @@
 
                         <br>
 
-                        {% if product.contains %}
-                            <div class="contains">
-                                Contains:
-                                {% for item in product.contains %}
-                                    {% if forloop.last %}
-                                        {{ item }}
-                                    {% else %}
-                                        {{ item }},
-                                    {% endif %}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-
-                        {% if product.may_contain %}
-                            <div class="may_contain">
-                                May Contain:
-                                {% for item in product.may_contain %}
-                                    {% if forloop.last %}
-                                        {{ item }}
-                                    {% else %}
-                                        {{ item }},
-                                    {% endif %}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-
-                        <br>
-
                         <table class="details"><tbody>
+                            {% if product.contains %}
+                                <tr class="contains">
+                                    <td class="details_col1">Contains:</td>
+                                    <td class="details_col3" colspan="2">
+                                        {% for item in product.contains %}
+                                            {% if forloop.last %}
+                                                {{ item }}
+                                            {% else %}
+                                                {{ item }},
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+
+                            {% if product.may_contain %}
+                                <tr class="may_contain">
+                                    <td class="details_col1">May Contain:</td>
+                                    <td class="details_col3" colspan="2">
+                                        {% for item in product.may_contain %}
+                                            {% if forloop.last %}
+                                                {{ item }}
+                                            {% else %}
+                                                {{ item }},
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+
+                            {% if product.contains or product.may_contain %}
+                                <tr><td colspan="3">&nbsp;</td></tr>
+                            {% endif %}
+
                             {% if product.details.serving_size %}
                                 <tr><td class="details_col1">Serving Size:</td><td class="details_col3" colspan="2">{{ product.details.serving_size }}{{ product.serving_size_uom }}</td></tr>
                             {% endif %}
