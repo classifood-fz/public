@@ -1,24 +1,26 @@
 #dropdown {
     display: inline-block;
-    width: 22px;
-    height: 22px;    
+    width: 30px;
+    height: 30px;
+    margin: 30px 20px;
     background-image: url('/img/menu.png');
     float: right;
+    cursor: pointer;
 }
 
 #menu {
     display: none;
-    position: absolute;
-    top: 8px;
-    right: 0px;
+    position: relative;
+    top: 20px;
+    right: 134px;
     z-index: 100;
 }
 
 #signin {
     display: none;
-    position: absolute;
-    top: 8px;
-    right: 0px;
+    position: relative;
+    top: 20px;
+    right: 171px;
     z-index: 100;
 }
 

@@ -23,47 +23,44 @@
 
 {% block content %}
     <div id="box">
-        <div id="top">
-            <div id="dropdown">
-                <ul id="menu" class="dropdown">
-                    <a class="dropdown_link" href="/user/shopping_list"><li class="drop_item">
-                        <table><tbody>
-                            <tr><td><img src="/img/menu_cart.png" alt="menu_cart.png" /></td><td>Shopping List</td></tr>
-                        </tbody></table>
-                    </li></a>
-                    <a class="dropdown_link" href="/user/pantry"><li class="drop_item">
-                        <table><tbody>
-                            <tr><td><img src="/img/menu_pantry.png" alt="menu_pantry.png" /></td><td>Pantry</td></tr>
-                        </tbody></table>
-                    </li></a>
-                    <a class="dropdown_link" href="/user/profile"><li class="drop_item">
-                        <table><tbody>
-                            <tr><td><img src="/img/menu_profile.png" alt="menu_profile.png" /></td><td>Profile</td></tr>
-                        </tbody></table>
-                    </li></a>
-                    <a id="signout" class="dropdown_link"><li class="drop_item">
-                        <table><tbody>
-                            <tr><td><img src="/img/signout.png" alt="signout.png" /></td><td>Sign Out</td></tr>
-                        </tbody></table>
-                    </li></a>
-                </ul>
-            </div>
+        <br style="line-height:20px;">
+        <div id="dropdown">
+            <ul id="menu" class="dropdown">
+                <a class="dropdown_link" href="/user/shopping_list"><li class="drop_item">
+                    <table><tbody>
+                        <tr><td><img src="/img/menu_cart.png" alt="menu_cart.png" /></td><td>Shopping List</td></tr>
+                    </tbody></table>
+                </li></a>
+                <a class="dropdown_link" href="/user/pantry"><li class="drop_item">
+                    <table><tbody>
+                        <tr><td><img src="/img/menu_pantry.png" alt="menu_pantry.png" /></td><td>Pantry</td></tr>
+                    </tbody></table>
+                </li></a>
+                <a class="dropdown_link" href="/user/profile"><li class="drop_item">
+                    <table><tbody>
+                        <tr><td><img src="/img/menu_profile.png" alt="menu_profile.png" /></td><td>Profile</td></tr>
+                    </tbody></table>
+                </li></a>
+                <a id="signout" class="dropdown_link"><li class="drop_item">
+                    <table><tbody>
+                        <tr><td><img src="/img/signout.png" alt="signout.png" /></td><td>Sign Out</td></tr>
+                    </tbody></table>
+                </li></a>
+            </ul>
         </div>
-        <div id="top_filler"></div>
 
-        <table id="logo_and_headline">
+        <table id="icons">
             <tr>
-                <td>
-                    <a href="/"><img id="logo_icon" src="/img/classifood_icon_49x49.png" alt="logo_icon.png" /></a>
-                </td>
+                <td><a href="/"><img src="/img/classifood_icon_49x49.png" alt="icon.png" /></a></td>
                 <td style="padding-left:10px;">{% block section_icon %}{% endblock section_icon %}</td>
             </tr>
         </table>
 
-        <div id="content_body">
-            {% block content_body %}
-            {% endblock content_body %}
-        </div>
+        <br><br>
+
+        {% block content_body %}
+        {% endblock content_body %}
+        
         <br><br>
 
         <div id="bottom_links">

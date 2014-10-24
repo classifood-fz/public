@@ -11,12 +11,6 @@
     height: 135px;
 }
 
-#top_bar {
-    height: 22px;
-    border-bottom: 1px solid #aaaaaa;
-    background-color: #e0e0e0;
-}
-
 #top_table {
     border-spacing: 0;
     margin: 20px;

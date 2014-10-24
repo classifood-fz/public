@@ -3,36 +3,18 @@ body {
 }
 
 #box {
-    width: 800px;
+    width: 760px;
     margin: 0 auto;
+    padding: 0 20px;
     background-color: #ffffff;
 }
 
-#top {
-    position: absolute;
-    top: 0;
-    width: 800px;
-    height: 22px;
-    border-bottom: 1px solid #aaaaaa;
-    text-align: right;    
-    background-color: #e0e0e0;
+#dropdown {
+    margin: 10px 0;
 }
 
-#top_filler {
-    height: 22px;
-}
-
-#logo_and_headline {
-    margin: 20px;
+#icons {
     border-spacing: 0;
-}
-
-#logo_icon {
-    display: block;
-}
-
-#content_body {
-    margin: 20px;
 }
 
 #delete {
@@ -52,23 +34,19 @@ body {
 }
 
 #bottom_links {    
-    width: 800px;
+    width: 760px;
     margin: 0 auto;
     background-color: #ffffff;
 }
 
 #bottom_filler {
-    width: 800px;
+    width: 760px;
     margin: 0 auto;
 }
 
 @media (max-width: 800px) {
     #box {
         width: 100%;
-    }
-
-    #top {
-	width: 100%;
     }
 
     #bottom_links {
