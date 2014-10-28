@@ -1,25 +1,31 @@
 #wrapper {
-    width: 90%;
+    width: 800px;
     margin: 20px auto;
+}
+
+h4 {
+    display: block;
+    width: 162px;
+    margin: 20px auto;
+    white-space: nowrap;
+}
+
+#box {
+    padding: 10px;
+    border: 4px double #000000;
+    border-radius: 20px;
     text-align: center;
 }
 
-.column {
+.word {
     display: inline-block;
-    width: 248px;
-    text-align: left;
-    vertical-align: top;
+    margin: 10px 20px;
+    color: #088a68;
+    white-span: nowrap;
 }
 
-.group {
-    display: inline-block;
-    width: 200px;
-    margin: 10px;
-    padding: 10px;
-    border: 4px double #000000;
-}
-
-.group_title {
-    font-weight: bold;
-    color: #088a68;    
+@media (max-width: 800px) {
+    #wrapper {
+	width: 90%;
+    }
 }

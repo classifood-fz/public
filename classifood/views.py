@@ -192,6 +192,13 @@ def authenticate(request):
 
 
 """
+Returns the categories page
+"""
+def categories(request):    
+    return render_to_response('categories.html', {'categories': mark_safe(json.dumps(constants.categories))}, RequestContext(request))
+
+
+"""
 Returns the contact form page.
 """
 def contact(request):
@@ -225,10 +232,17 @@ def delete_shopping_list(request):
 
 
 """
-Serves the web home page
+Returns the web home page
 """
 def index(request):    
-    return render_to_response('index.html', {'categories': mark_safe(json.dumps(constants.categories))}, RequestContext(request))
+    return render_to_response(
+        'index.html', 
+        {
+            'nutrients': mark_safe(json.dumps(constants.known_nutrients)),
+            'allergens': mark_safe(json.dumps(constants.known_allergens)),
+            'additives': mark_safe(json.dumps(constants.known_additives))
+        },
+        RequestContext(request))
 
 
 """

@@ -3,18 +3,22 @@ body {
 }
 
 #box {
-    width: 760px;
+    width: 800px;
     margin: 0 auto;
-    padding: 0 20px;
     background-color: #ffffff;
 }
 
 #dropdown {
-    margin: 10px 0;
+    margin: 10px 20px;
 }
 
 #icons {
     border-spacing: 0;
+    margin: 0 20px;
+}
+
+#content_body {
+    margin: 20px;
 }
 
 #delete {
@@ -34,13 +38,13 @@ body {
 }
 
 #bottom_links {    
-    width: 760px;
+    width: 800px;
     margin: 0 auto;
     background-color: #ffffff;
 }
 
 #bottom_filler {
-    width: 760px;
+    width: 800px;
     margin: 0 auto;
 }
 

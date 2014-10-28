@@ -11,6 +11,7 @@ urlpatterns = patterns(
     url(r'^add_to_pantry$', 'classifood.views.add_to_pantry'),
     url(r'^add_to_shopping_list$', 'classifood.views.add_to_shopping_list'),
     url(r'^authenticate$', 'classifood.views.authenticate'),
+    url(r'^categories$', 'classifood.views.categories'),
     url(r'^contact$', 'classifood.views.contact'),
     url(r'^privacy_policy$', 'classifood.views.privacy_policy'),
     url(r'^remove_additive$', 'classifood.views.remove_additive'),
