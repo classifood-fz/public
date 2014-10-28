@@ -1,0 +1,33 @@
+#wrapper {
+    width: 90%;
+    margin: 20px auto;
+    text-align: center;
+}
+
+h4 {
+    display: block;
+    width: 162px;
+    margin: 20px auto;
+    white-space: nowrap;
+}
+
+.column {
+    display: inline-block;
+    width: 248px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.group {
+    display: inline-block;
+    width: 200px;
+    margin: 10px;
+    padding: 10px;    
+    border: 4px double #000000;
+    border-radius: 20px;
+}
+
+.group_title {
+    font-weight: bold;
+    color: #088a68;
+}
