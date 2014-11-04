@@ -1,3 +1,4 @@
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, redirect
 from django.utils.safestring import mark_safe
 from django.template import RequestContext
@@ -7,7 +8,7 @@ from google.appengine.api import mail, users
 from google.appengine.ext import ndb
 
 from classifood import label, utils, settings, crypto, constants
-from classifood.models import User, Shopping_List_Product, Pantry_Product
+from classifood.models import User, Order, Shopping_List_Product, Pantry_Product
 
 from oauth2client.client import OAuth2WebServerFlow, FlowExchangeError
 
@@ -16,7 +17,8 @@ from datetime import datetime
 
 import httplib2
 import json
-
+import time
+import jwt
 
 """
 Returns the about page
@@ -690,11 +692,30 @@ def user_profile(request):
 
     if user_id:
         user = User.get_by_id(user_id)
+        upgrade_token = None
+
+        if not user.is_premium:
+            upgrade_token = jwt.encode(
+                {
+                    'iss': settings.GOOGLE_SELLER_ID,
+                    'aud': 'Google', # Must be Google
+                    'typ': 'google/payments/inapp/item/v1', # Must be google/payments/inapp/item/v1
+                    'exp': int(time.time()+3600), # expiration time
+                    'iat': int(time.time()), # issue time
+                    'request': {
+                        'name': 'Classifood Upgrade',
+                        'description': 'Upgrade for premium features on Classifood',
+                        'price': '3.00',
+                        'currencyCode': 'USD',
+                        'sellerData': 'user_id:{0}'.format(user_id)
+                    }
+                }, settings.GOOGLE_SELLER_SECRET)
 
         return render_to_response(
             'user_profile.html',
             {
                 'user': user,
+                'upgrade_token': upgrade_token,
                 'known_nutrients': constants.known_nutrients,
                 'known_allergens': constants.known_allergens,
                 'known_additives': constants.known_additives
@@ -796,6 +817,31 @@ def user_shopping_list(request):
             RequestContext(request))
 
     return redirect('/signin')
+
+
+"""
+Verifies Google Checkout purchase
+"""
+@csrf_exempt
+def verify_purchase(request):
+    if request.method == 'POST':
+        json = jwt.decode(request.POST.get('jwt', None), settings.GOOGLE_SELLER_SECRET)
+
+	if json and json['request']['name'] == 'Classifood Upgrade' and json['request']['sellerData'].find('user_id') != -1:
+	    user = User.get_by_id(json['request']['sellerData'][8:])
+	    if user:
+	        user.is_premium = True
+	        user.put()
+		Order(id = json['response']['orderId'],
+                      user_id = user.key.id(),
+                      name = json['request']['name'],
+                      description = json['request']['description'],
+                      price = json['request']['price'],
+                      currency = json['request']['currencyCode']).put()
+
+                return HttpResponse(json['response']['orderId'], content_type='text/plain')
+
+    return HttpResponse('error', content_type='text/plain')
 
 
 """

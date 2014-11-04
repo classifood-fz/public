@@ -31,7 +31,8 @@ urlpatterns = patterns(
     url(r'^user/delete_shopping_list$', 'classifood.views.delete_shopping_list'),
     url(r'^user/pantry$', 'classifood.views.user_pantry'),
     url(r'^user/profile$', 'classifood.views.user_profile'),
-    url(r'^user/shopping_list$', 'classifood.views.user_shopping_list')
+    url(r'^user/shopping_list$', 'classifood.views.user_shopping_list'),
+    url(r'^verify_purchase$', 'classifood.views.verify_purchase'),
 )
 
 handler404 = 'classifood.views.err404'
