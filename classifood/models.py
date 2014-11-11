@@ -1,5 +1,20 @@
 from google.appengine.ext import ndb
 
+"""
+Search cache
+"""
+class Search(ndb.Model):
+    update_datetime = ndb.DateTimeProperty(auto_now=True, indexed=True)
+    search_term = ndb.StringProperty(indexed=True)
+    start = ndb.IntegerProperty(indexed=True)
+    nutrients = ndb.JsonProperty(indexed=True)
+    allergens = ndb.JsonProperty(indexed=True)
+    additives = ndb.JsonProperty(indexed=True)
+    ingredients = ndb.JsonProperty(indexed=True)
+    products = ndb.JsonProperty(indexed=False)
+    pages = ndb.JsonProperty(indexed=False)
+    nfound = ndb.JsonProperty(indexed=False)
+
 class User(ndb.Model):
     update_datetime = ndb.DateTimeProperty(auto_now=True, indexed=True)
     email = ndb.StringProperty(indexed=True)

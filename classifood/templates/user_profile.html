@@ -218,7 +218,11 @@
 {% endblock headjs2 %}
 
 {% block section_icon %}
-    <a href="/"><img src="/img/profile_49x49.png" alt="profile.png" /></a>
+    {% if user.is_premium %}
+        <a href="/"><img src="/img/premium_profile_49x49.png" alt="profile.png" /></a>
+    {% else %}
+        <a href="/"><img src="/img/profile_49x49.png" alt="profile.png" /></a>
+    {% endif %}
 {% endblock section_icon %}
 
 {% block content_body %}

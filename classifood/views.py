@@ -8,7 +8,7 @@ from google.appengine.api import mail, users
 from google.appengine.ext import ndb
 
 from classifood import label, utils, settings, crypto, constants
-from classifood.models import User, Order, Shopping_List_Product, Pantry_Product
+from classifood.models import User, Order, Search, Shopping_List_Product, Pantry_Product
 
 from oauth2client.client import OAuth2WebServerFlow, FlowExchangeError
 
@@ -240,9 +240,9 @@ def index(request):
     return render_to_response(
         'index.html', 
         {
-            'nutrients': mark_safe(json.dumps(constants.known_nutrients)),
-            'allergens': mark_safe(json.dumps(constants.known_allergens)),
-            'additives': mark_safe(json.dumps(constants.known_additives))
+            'nutrients': mark_safe(json.dumps(map(lambda x: x[0], constants.known_nutrients))),
+            'allergens': mark_safe(json.dumps(map(lambda x: x[0], constants.known_allergens))),
+            'additives': mark_safe(json.dumps(map(lambda x: x[0], constants.known_additives))),
         },
         RequestContext(request))
 
@@ -408,74 +408,107 @@ def search(request):
     except ValueError:
         start = 0
 
-    if session_id:
-        # Search products by keywords
-        search_result = label.search_products(session_id, search_term, start=start)
+    nutr = user.nutrients if user else map(lambda x: x['name'], settings.LABEL_DEFAULT_PROFILE['nutrients'])
+    allg = user.allergens if user else map(lambda x: x['name'], settings.LABEL_DEFAULT_PROFILE['allergens'])
+    addt = user.additives if user else map(lambda x: x['name'], settings.LABEL_DEFAULT_PROFILE['additives'])
+    ingr = user.ingredients if user else []
 
-        if 'numFound' in search_result and search_result['numFound'] > 0:
-            products = search_result['productsArray']
-            total_found = search_result['numFound']
-            pages = get_pages(start, total_found)
-        else:
-            label_error = True
+    in_cache = Search.query(Search.search_term == search_term,
+                            Search.start == start,
+                            Search.nutrients == nutr,
+                            Search.allergens == allg,
+                            Search.additives == addt,
+                            Search.ingredients == ingr).get()
 
-        # Get product score and product details
-        for product in products:
-            # Set none to empty-string for product_size
-            if product['product_size'].strip() == 'none':
-                product['product_size'] = ''
+    # Data in cache and less than 30 days old
+    if in_cache and (datetime.utcnow() - in_cache.update_datetime).days < 30:
+        products = in_cache.products
+        pages = in_cache.pages
+        total_found = in_cache.nfound
 
-            # Get product details
-            prod_details = label.label_array(session_id, product['upc'])
+    else:
+        if session_id:
+            # Search products by keywords
+            search_result = label.search_products(session_id, search_term, start=start)
 
-            if 'productsArray' in prod_details:
-                product['details'] = prod_details['productsArray'][0]
-                product['contains'] = []
-                product['may_contain'] = []
-
-                # Get nutrient percentage value
-                for nutrient in product['details']['nutrients']:
-                    if nutrient['nutrient_name'] in settings.DAILY_VALUES and nutrient['nutrient_uom'] in settings.UNIT_MULTIPLIER:
-                        try:
-                            nutrient['percentage_value'] = '{:.0%}'.format(float(nutrient['nutrient_value']) * settings.UNIT_MULTIPLIER[nutrient['nutrient_uom']] / settings.DAILY_VALUES[nutrient['nutrient_name']][1])
-                        except ValueError:
-                            nutrient['percentage_value'] = ''
-
-                for allergen in product['details']['allergens']:
-                    if allergen['allergen_value'] == '2':
-                        product['contains'].append(allergen['allergen_name'])
-                    elif allergen['allergen_value'] == '1':
-                        product['may_contain'].append(allergen['allergen_name'])
-
-                for additive in product['details']['additives']:
-                    if additive['additive_value'] == '2':
-                        product['contains'].append(additive['additive_name'])
-                    elif additive['additive_value'] == '1':
-                        product['may_contain'].append(additive['additive_name'])
-
-                for ingredient in product['details']['procingredients']:
-                    if ingredient['value'] == 2:
-                        product['contains'].append(ingredient['name'])
-                    elif ingredient['value'] == 1:
-                        product['may_contain'].append(ingredient['name'])
-
+            if 'numFound' in search_result:
+                total_found = search_result['numFound']
+                if total_found > 0:
+                    products = search_result['productsArray']
+                    pages = get_pages(start, total_found)
             else:
                 label_error = True
-                break
 
-            # Check if product is on user shopping list
-            if user and Shopping_List_Product.query(
-                    Shopping_List_Product.user_id == user.key.id(),
-                    Shopping_List_Product.barcode == product['upc']
-            ).get(keys_only=True):
-                product['on_shopping_list'] = 'true'
+            # Get product score and product details
+            for product in products:
+                # Set none to empty-string for product_size
+                if product['product_size'].strip() == 'none':
+                    product['product_size'] = ''
 
-            # Check if product is on user shopping list
-            if user and Pantry_Product.query(
-                    Pantry_Product.user_id == user.key.id(),
-                    Pantry_Product.barcode == product['upc']
-            ).get(keys_only=True):
-                product['in_pantry'] = 'true'
+                # Get product details
+                prod_details = label.label_array(session_id, product['upc'])
+
+                if 'productsArray' in prod_details:
+                    product['details'] = prod_details['productsArray'][0]
+                    product['contains'] = []
+                    product['may_contain'] = []
+
+                    # Get nutrient percentage value
+                    for nutrient in product['details']['nutrients']:
+                        if nutrient['nutrient_name'] in constants.DAILY_VALUES and nutrient['nutrient_uom'] in constants.UNIT_MULTIPLIER:
+                            try:
+                                nutrient['percentage_value'] = '{:.0%}'.format(float(nutrient['nutrient_value']) * constants.UNIT_MULTIPLIER[nutrient['nutrient_uom']] / constants.DAILY_VALUES[nutrient['nutrient_name']][1])
+                            except ValueError:
+                                nutrient['percentage_value'] = ''
+
+                    for allergen in product['details']['allergens']:
+                        if allergen['allergen_value'] == '2':
+                            product['contains'].append(allergen['allergen_name'])
+                        elif allergen['allergen_value'] == '1':
+                            product['may_contain'].append(allergen['allergen_name'])
+
+                    for additive in product['details']['additives']:
+                        if additive['additive_value'] == '2':
+                            product['contains'].append(additive['additive_name'])
+                        elif additive['additive_value'] == '1':
+                            product['may_contain'].append(additive['additive_name'])
+
+                    for ingredient in product['details']['procingredients']:
+                        if ingredient['value'] == 2:
+                            product['contains'].append(ingredient['name'])
+                        elif ingredient['value'] == 1:
+                            product['may_contain'].append(ingredient['name'])
+
+                else:
+                    label_error = True
+                    break
+
+            # Add to cache
+            if not label_error:
+                Search(search_term = search_term,
+                       start = start,
+                       nutrients = nutr,
+                       allergens = allg,
+                       additives = addt,
+                       ingredients = ingr,
+                       products = products,
+                       pages = pages,
+                       nfound = total_found).put()
+
+    for product in products:
+        # Check if product is on user shopping list
+        if user and Shopping_List_Product.query(
+                Shopping_List_Product.user_id == user.key.id(),
+                Shopping_List_Product.barcode == product['upc']
+        ).get(keys_only=True):
+            product['on_shopping_list'] = 'true'
+
+        # Check if product is on user shopping list
+        if user and Pantry_Product.query(
+                Pantry_Product.user_id == user.key.id(),
+                Pantry_Product.barcode == product['upc']
+        ).get(keys_only=True):
+            product['in_pantry'] = 'true'
 
     response = render_to_response(
         'search.html', 
@@ -486,7 +519,8 @@ def search(request):
             'pages': pages,
             'start': start,
             'total_found': total_found,
-            'label_error': label_error
+            'label_error': label_error,
+            'in_cache': in_cache
         },
         RequestContext(request))
 
@@ -629,9 +663,9 @@ def user_pantry(request):
 
                 # Get nutrient percentage value
                 for nutrient in products[length-1]['nutrients']:
-                    if nutrient['nutrient_name'] in settings.DAILY_VALUES and nutrient['nutrient_uom'] in settings.UNIT_MULTIPLIER:
+                    if nutrient['nutrient_name'] in constants.DAILY_VALUES and nutrient['nutrient_uom'] in constants.UNIT_MULTIPLIER:
                         try:
-                            nutrient['percentage_value'] = '{:.0%}'.format(float(nutrient['nutrient_value']) * settings.UNIT_MULTIPLIER[nutrient['nutrient_uom']] / settings.DAILY_VALUES[nutrient['nutrient_name']][1])
+                            nutrient['percentage_value'] = '{:.0%}'.format(float(nutrient['nutrient_value']) * constants.UNIT_MULTIPLIER[nutrient['nutrient_uom']] / constants.DAILY_VALUES[nutrient['nutrient_name']][1])
                         except ValueError:
                             nutrient['percentage_value'] = ''
 
@@ -764,9 +798,9 @@ def user_shopping_list(request):
 
                 # Get nutrient percentage value
                 for nutrient in products[length-1]['nutrients']:
-                    if nutrient['nutrient_name'] in settings.DAILY_VALUES and nutrient['nutrient_uom'] in settings.UNIT_MULTIPLIER:
+                    if nutrient['nutrient_name'] in constants.DAILY_VALUES and nutrient['nutrient_uom'] in constants.UNIT_MULTIPLIER:
                         try:
-                            nutrient['percentage_value'] = '{:.0%}'.format(float(nutrient['nutrient_value']) * settings.UNIT_MULTIPLIER[nutrient['nutrient_uom']] / settings.DAILY_VALUES[nutrient['nutrient_name']][1])
+                            nutrient['percentage_value'] = '{:.0%}'.format(float(nutrient['nutrient_value']) * constants.UNIT_MULTIPLIER[nutrient['nutrient_uom']] / constants.DAILY_VALUES[nutrient['nutrient_name']][1])
                         except ValueError:
                             nutrient['percentage_value'] = ''
 

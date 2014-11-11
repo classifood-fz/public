@@ -1,4 +1,4 @@
-# categories sets the groups and links on the homepage
+# -*- coding: utf-8 -*-
 
 categories = [
     {'Beverages': [
@@ -320,3 +320,46 @@ known_additives = [
     ('Unsaturated Fat', False),
     ('Vegetable Gum', False),
 ]
+
+DAILY_VALUES = {
+    # Name: (<string>, <in grams>)
+    u'Total Fat': (u'65 g', 65.0),
+    u'Saturated Fat': (u'20 g', 20.0),
+    u'Cholesterol': (u'300 mg', 0.3),
+    u'Sodium': (u'2,400 mg', 2.4),
+    u'Potassium': (u'3,500 mg', 3.5),
+    u'Total Carbohydrate': (u'300 g', 300.0),
+    u'Dietary Fiber': (u'25 g', 25.0),
+    u'Protein': (u'50 g', 50.0),
+    u'Vitamin A': (u'5,000 IU', 0.0015),
+    u'Vitamin C': (u'60 mg', 0.06),
+    u'Calcium': (u'1,000 mg', 1.0),
+    u'Iron': (u'18 mg', 0.018),
+    u'Vitamin D': (u'400 IU', 0.00001),
+    u'Vitamin E': (u'30 IU', 0.025),
+    u'Vitamin K': (u'80 μg', 0.00008),
+    u'Thiamin': (u'1.5 mg', 0.0015),
+    u'Riboflavin': (u'1.7 mg', 0.0017),
+    u'Niacin': (u'20 mg', 0.02),
+    u'Vitamin B6': (u'2 mg', 0.002),
+    u'Folate': (u'400 μg', 0.0004),
+    u'Vitamin B12': (u'6 μg', 0.000006),
+    u'Biotin': (u'300 μg', 0.0003),
+    u'Pantothenic acid': (u'10 mg', 0.01),
+    u'Phosphorus': (u'1,000 mg', 1.0),
+    u'Iodine': (u'150 μg', 0.00015),
+    u'Magnesium': (u'400 mg', 0.4),
+    u'Zinc': (u'15 mg', 0.015),
+    u'Selenium': (u'70 μg', 0.00007),
+    u'Copper': (u'2 mg', 0.002),
+    u'Manganese': (u'2 mg', 0.002),
+    u'Chromium': (u'120 μg', 0.00012),
+    u'Molybdenum': (u'75 μg', 0.000075),
+    u'Chloride': (u'3,400 mg', 3.4),
+}
+
+UNIT_MULTIPLIER = {
+    u'g': 1.0,
+    u'mg': 0.001,
+    u'μg': 0.000001,
+}
