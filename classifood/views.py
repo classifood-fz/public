@@ -520,7 +520,6 @@ def search(request):
             'start': start,
             'total_found': total_found,
             'label_error': label_error,
-            'in_cache': in_cache
         },
         RequestContext(request))
 
