@@ -42,10 +42,6 @@
                 if (!browser_accepts_cookies()) {
                     jQuery('#cookies_not_accepted_message').show();
                 }
-
-                {% if label_error %}
-                    jQuery('#no_data_message').show();
-                {% endif %}
             });
         </script>
         {% block headjs %}
@@ -53,18 +49,17 @@
     </head>
 
     <body>
+        {% block top %}
+        {% endblock top %}
+    
         <div id="js_off_message" "top_message">This website requires JavaScript in order to work properly. Please enable JavaScript in your browser settings.</div>
         <div id="cookies_not_accepted_message" class="top_message hidden">This website requires the ability to set browser cookies in order to work properly. Please enable cookies in your browser settings.</div>
-        <div id="no_data_message" class="top_message hidden">We are having trouble with our data servers. Please try again later.</div>
 
-        <!-- Do not need to wait for page to load before hiding this message. -->
+        <!-- Does not need to wait for page to load before hiding this message. -->
         <script>
             jQuery('#js_off_message').hide()
         </script>
 
-        {% block top %}
-        {% endblock top %}
-    
         {% block content %}
         {% endblock content %}
 
