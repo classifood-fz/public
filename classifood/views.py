@@ -436,8 +436,6 @@ def search(request):
             products = search_result['productsArray']
             pages = get_pages(start, total_found)
 
-        missing_details = False
-
         # Get product details
         for product in products:
             if product['product_size'].strip() == 'none':
@@ -476,20 +474,16 @@ def search(request):
                     elif ingredient['value'] == 1:
                         product['may_contain'].append(ingredient['name'])
 
-            else:
-                missing_details = True
-
-        if not missing_details:
-            # Add to cache
-            Search(search_term = search_term,
-                   start = start,
-                   nutrients = nutr,
-                   allergens = allg,
-                   additives = addt,
-                   ingredients = ingr,
-                   products = products,
-                   pages = pages,
-                   nfound = total_found).put()
+        # Add to cache
+        Search(search_term = search_term,
+               start = start,
+               nutrients = nutr,
+               allergens = allg,
+               additives = addt,
+               ingredients = ingr,
+               products = products,
+               pages = pages,
+               nfound = total_found).put()
 
     for product in products:
         # Check if product is on user shopping list
