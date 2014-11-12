@@ -388,15 +388,13 @@ def search(request):
     mobile = request.GET.get('mobile', '')
     user = User.get_by_id(crypto.decrypt(request.COOKIES['euid'])) if 'euid' in request.COOKIES else None
     session_id = request.get_signed_cookie('session_id', default=None)
-    label_error = False
 
     if not session_id:
-        session = label.create_session()
-        if 'session_id' in session:
-            session_id = session['session_id']
-            label.set_profile(session_id)
-        else:
-            label_error = True
+        session = {}
+        while 'session_id' not in session:
+            session = label.create_session()
+        session_id = session['session_id']
+        label.set_profile(session_id)
     
     products = [] # list of product info dictionaries
     pages = [] # list of (page_start, page_label) tuples
@@ -427,73 +425,71 @@ def search(request):
         total_found = in_cache.nfound
 
     else:
-        if session_id:
-            # Search products by keywords
+        search_result = {}
+
+        while 'numFound' not in search_result:
             search_result = label.search_products(session_id, search_term, start=start)
 
-            if 'numFound' in search_result:
-                total_found = search_result['numFound']
-                if total_found > 0:
-                    products = search_result['productsArray']
-                    pages = get_pages(start, total_found)
+        total_found = search_result['numFound']
+
+        if total_found > 0:
+            products = search_result['productsArray']
+            pages = get_pages(start, total_found)
+
+        missing_details = False
+
+        # Get product details
+        for product in products:
+            if product['product_size'].strip() == 'none':
+                product['product_size'] = ''
+
+            prod_details = label.label_array(session_id, product['upc'])
+
+            if 'productsArray' in prod_details:
+                product['details'] = prod_details['productsArray'][0]
+                product['contains'] = []
+                product['may_contain'] = []
+
+                # Get nutrient percentage value
+                for nutrient in product['details']['nutrients']:
+                    if nutrient['nutrient_name'] in constants.DAILY_VALUES and nutrient['nutrient_uom'] in constants.UNIT_MULTIPLIER:
+                        try:
+                            nutrient['percentage_value'] = '{:.0%}'.format(float(nutrient['nutrient_value']) * constants.UNIT_MULTIPLIER[nutrient['nutrient_uom']] / constants.DAILY_VALUES[nutrient['nutrient_name']][1])
+                        except ValueError:
+                            nutrient['percentage_value'] = ''
+
+                for allergen in product['details']['allergens']:
+                    if allergen['allergen_value'] == '2':
+                        product['contains'].append(allergen['allergen_name'])
+                    elif allergen['allergen_value'] == '1':
+                        product['may_contain'].append(allergen['allergen_name'])
+
+                for additive in product['details']['additives']:
+                    if additive['additive_value'] == '2':
+                        product['contains'].append(additive['additive_name'])
+                    elif additive['additive_value'] == '1':
+                        product['may_contain'].append(additive['additive_name'])
+
+                for ingredient in product['details']['procingredients']:
+                    if ingredient['value'] == 2:
+                        product['contains'].append(ingredient['name'])
+                    elif ingredient['value'] == 1:
+                        product['may_contain'].append(ingredient['name'])
+
             else:
-                label_error = True
+                missing_details = True
 
-            # Get product score and product details
-            for product in products:
-                # Set none to empty-string for product_size
-                if product['product_size'].strip() == 'none':
-                    product['product_size'] = ''
-
-                # Get product details
-                prod_details = label.label_array(session_id, product['upc'])
-
-                if 'productsArray' in prod_details:
-                    product['details'] = prod_details['productsArray'][0]
-                    product['contains'] = []
-                    product['may_contain'] = []
-
-                    # Get nutrient percentage value
-                    for nutrient in product['details']['nutrients']:
-                        if nutrient['nutrient_name'] in constants.DAILY_VALUES and nutrient['nutrient_uom'] in constants.UNIT_MULTIPLIER:
-                            try:
-                                nutrient['percentage_value'] = '{:.0%}'.format(float(nutrient['nutrient_value']) * constants.UNIT_MULTIPLIER[nutrient['nutrient_uom']] / constants.DAILY_VALUES[nutrient['nutrient_name']][1])
-                            except ValueError:
-                                nutrient['percentage_value'] = ''
-
-                    for allergen in product['details']['allergens']:
-                        if allergen['allergen_value'] == '2':
-                            product['contains'].append(allergen['allergen_name'])
-                        elif allergen['allergen_value'] == '1':
-                            product['may_contain'].append(allergen['allergen_name'])
-
-                    for additive in product['details']['additives']:
-                        if additive['additive_value'] == '2':
-                            product['contains'].append(additive['additive_name'])
-                        elif additive['additive_value'] == '1':
-                            product['may_contain'].append(additive['additive_name'])
-
-                    for ingredient in product['details']['procingredients']:
-                        if ingredient['value'] == 2:
-                            product['contains'].append(ingredient['name'])
-                        elif ingredient['value'] == 1:
-                            product['may_contain'].append(ingredient['name'])
-
-                else:
-                    label_error = True
-                    break
-
+        if not missing_details:
             # Add to cache
-            if not label_error:
-                Search(search_term = search_term,
-                       start = start,
-                       nutrients = nutr,
-                       allergens = allg,
-                       additives = addt,
-                       ingredients = ingr,
-                       products = products,
-                       pages = pages,
-                       nfound = total_found).put()
+            Search(search_term = search_term,
+                   start = start,
+                   nutrients = nutr,
+                   allergens = allg,
+                   additives = addt,
+                   ingredients = ingr,
+                   products = products,
+                   pages = pages,
+                   nfound = total_found).put()
 
     for product in products:
         # Check if product is on user shopping list
@@ -519,7 +515,6 @@ def search(request):
             'pages': pages,
             'start': start,
             'total_found': total_found,
-            'label_error': label_error,
         },
         RequestContext(request))
 
