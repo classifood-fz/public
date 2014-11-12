@@ -16,7 +16,7 @@ def call_api(http_method, api_method, params=None, body=None):
 
     if params:
         # Convert params to url-encoded string pairs
-        pairs = map(lambda pair: http.urlencode({pair[0]: pair[1]}), params.items())
+        pairs = map(lambda x: http.urlencode({x: params[x]}), params)
         url += '?' + '&'.join(pairs)
     
     try:        
