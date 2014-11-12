@@ -1,5 +1,14 @@
 indexes:
 
+- kind: Search
+  properties:
+  - name: search_term
+  - name: start
+  - name: nutrients
+  - name: allergens
+  - name: additives
+  - name: ingredients
+
 - kind: Pantry_Product
   properties:
   - name: user_id
