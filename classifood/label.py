@@ -36,7 +36,7 @@ def call_api(http_method, api_method, params=None, body=None):
 
     else:
         try:
-            return json.loads(response.content)
+            return json.loads(response.content, encoding='iso-8859-1')
         except ValueError:
             return {'error': response.content}
 
