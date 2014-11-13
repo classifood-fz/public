@@ -13,7 +13,7 @@ class Search(ndb.Model):
     ingredients = ndb.JsonProperty(indexed=True)
     products = ndb.JsonProperty(indexed=False)
     pages = ndb.JsonProperty(indexed=False)
-    nfound = ndb.JsonProperty(indexed=False)
+    nfound = ndb.IntegerProperty(indexed=False)
 
 class User(ndb.Model):
     update_datetime = ndb.DateTimeProperty(auto_now=True, indexed=True)
