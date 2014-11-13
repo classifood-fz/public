@@ -847,21 +847,21 @@ Verifies Google Checkout purchase
 @csrf_exempt
 def verify_purchase(request):
     if request.method == 'POST':
-        json = jwt.decode(request.POST.get('jwt', None), settings.GOOGLE_SELLER_SECRET)
+        data = jwt.decode(request.POST.get('jwt', None), settings.GOOGLE_SELLER_SECRET)
 
-	if json and json['request']['name'] == 'Classifood Upgrade' and json['request']['sellerData'].find('user_id') != -1:
-	    user = User.get_by_id(json['request']['sellerData'][8:])
+	if data and data['request']['name'] == 'Classifood Upgrade' and data['request']['sellerData'].find('user_id') != -1:
+	    user = User.get_by_id(data['request']['sellerData'][8:])
 	    if user:
 	        user.is_premium = True
 	        user.put()
-		Order(id = json['response']['orderId'],
+		Order(id = data['response']['orderId'],
                       user_id = user.key.id(),
-                      name = json['request']['name'],
-                      description = json['request']['description'],
-                      price = json['request']['price'],
-                      currency = json['request']['currencyCode']).put()
+                      name = data['request']['name'],
+                      description = data['request']['description'],
+                      price = data['request']['price'],
+                      currency = data['request']['currencyCode']).put()
 
-                return HttpResponse(json['response']['orderId'], content_type='text/plain')
+                return HttpResponse(data['response']['orderId'], content_type='text/plain')
 
     return HttpResponse('error', content_type='text/plain')
 
