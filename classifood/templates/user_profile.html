@@ -282,7 +282,7 @@
             {% for allergen, allow in known_allergens %}
                 {% if allow and allergen not in user.allergens %}
                     <span class="list_item"><input class="allergen" type="checkbox" name="{{ allergen }}" /> {{ allergen }}</span>
-                {% else %}
+                {% elif not allow %}
                     <span class="list_item"><span class="fake_checkbox"></span> {{ allergen }}</span>
                 {% endif %}
             {% endfor %}

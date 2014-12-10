@@ -8,7 +8,7 @@ from google.appengine.api import mail, users
 from google.appengine.ext import ndb
 
 from classifood import label, utils, settings, crypto, constants
-from classifood.models import User, Order, Search, Shopping_List_Product, Pantry_Product
+from classifood.models import User, Temp_User, Order, Search, Shopping_List_Product, Pantry_Product
 
 from oauth2client.client import OAuth2WebServerFlow, FlowExchangeError
 
@@ -383,7 +383,7 @@ def robots(request):
 Returns a list of search results.
 """
 def search(request):
-    search_term = request.GET.get('q', '')
+    search_term = request.GET.get('q', '').lower()
     start = request.GET.get('start', '0')
     mobile = request.GET.get('mobile', '')
     user = User.get_by_id(crypto.decrypt(request.COOKIES['euid'])) if 'euid' in request.COOKIES else None
@@ -391,11 +391,13 @@ def search(request):
 
     if not session_id:
         session = {}
+        temp_user = Temp_User()
+        temp_user.put()
         while 'session_id' not in session:
-            session = label.create_session()
+            session = label.create_session(user_id='Temp_User_{0}'.format(temp_user.key.id()))
         session_id = session['session_id']
         label.set_profile(session_id)
-    
+
     products = [] # list of product info dictionaries
     pages = [] # list of (page_start, page_label) tuples
     total_found = 0

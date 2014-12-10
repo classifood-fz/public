@@ -28,6 +28,15 @@ class User(ndb.Model):
     pay_datetime = ndb.DateTimeProperty(indexed=True, default=None)
     refresh_token = ndb.StringProperty(indexed=True)
 
+class Temp_User(ndb.Model):
+    updated_on = ndb.DateTimeProperty(auto_now=True, indexed=True)
+
+class Device(ndb.Model):
+    updated_on = ndb.DateTimeProperty(auto_now=True, indexed=True)
+
+class Application(ndb.Model):
+    updated_on = ndb.DateTimeProperty(auto_now=True, indexed=True)
+
 class Order(ndb.Model):
     add_datetime = ndb.DateTimeProperty(auto_now_add=True, indexed=True)
     user_id = ndb.StringProperty(indexed=True)
