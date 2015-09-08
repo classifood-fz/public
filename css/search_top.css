@@ -29,8 +29,9 @@
 }
 
 #search_btn {
-    width: 30px;
-    height: 30px;
+    max-width: 30px;
+    height: auto;
+    height: auto\9; /* IE 8 */
     border: 0;
     background-image: url('/img/search.png');
 }

@@ -4,14 +4,65 @@
     <link type="text/css" rel="stylesheet" href="/css/index.css" />
 {% endblock headcss2 %}
 
+{% block headjs2 %}
+    <script>
+        /*
+        jQuery(document).ready(function() {
+            jQuery.ajax({
+                type: 'GET',
+                url: 'http://api.feedzilla.com/v1/categories/11/subcategories/487/articles.json?count=10&order=date',
+                dataType: 'json',
+                success: function(returned_json, status, jqxhr) {
+                    returned_json.articles.forEach(function(article, index, self) {
+                        var div = document.createElement('div');
+                        div.setAttribute('class', 'article');
+                        var title = document.createElement('span');
+                        title.setAttribute('class', 'title');
+                        title.textContent = article.title;
+                        var date = document.createElement('span');
+                        date.setAttribute('class', 'date');
+                        date.textContent = article.publish_date.substring(0, 16);
+                        var summary = document.createElement('span');
+                        summary.setAttribute('class', 'summary');
+                        summary.textContent = article.summary;
+                        var article_link = document.createElement('a');
+                        article_link.setAttribute('href', article.url);
+                        article_link.setAttribute('target', '_blank');
+                        article_link.textContent = 'Full Article';
+                        div.appendChild(title);
+                        div.appendChild(document.createElement('br'));
+                        div.appendChild(date);
+                        div.appendChild(document.createElement('br'));
+                        div.appendChild(document.createElement('br'));
+                        div.appendChild(summary);
+                        div.appendChild(article_link);
+                        div.appendChild(document.createElement('br'));
+                        div.appendChild(document.createElement('br'));
+                        jQuery('#articles').append(div);
+                    });
+
+                    refreshBottom();
+                },
+                error: function(jqxhr, status, error) {
+                    console.log('Feedzilla error');
+                }
+            });
+        });
+        */
+        jQuery(document).ready(function() {
+            if (get_cookie('euid')) {
+                jQuery('#signin_msg').hide();
+            }
+        });
+    </script>
+{% endblock headjs2 %}
+
 {% block content %}
-    <h4>Home | <a class="always_blue" href="/categories">Food Categories</a></h4>
     <div id="wrapper">
-        <p>Approximately 45 million Americans are on diets and 15 million Americans have food allergy. Classifood helps living with diet restrictions easier by providing information on over 200,000 food products and their relations to 17 nutrients, 15 food allergens, 35 food additives, and thousands of ingredients. Sign in with a Google account to learn more.</p>
-        <br><br>
+        <p class="intro">Classifood provides information on over 200,000 food products and their relations to 17 nutrients, 15 food allergens, and 35 food additives. <a class="always_blue" href="/categories" target="_self">See food categories</a> <span id="signin_msg">or <a class="always_blue" href="/signin" target="_self">Sign in</a> to learn more</span></p>
 
         <div id="box">
-            <h3>Know What's In Your Food</h3>
+            <h3>What's in your food?</h3>
             <br>
             <!-- Nutrient, allergen, and additive names go here -->
         </div>
@@ -42,5 +93,9 @@
                 box.append(span);
             });
         </script>
+
+        <br><br>
+
+        <div id="articles"></div>
     </div>
 {% endblock %}

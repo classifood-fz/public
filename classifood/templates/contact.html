@@ -7,7 +7,7 @@
 {% endblock headcss %}
 
 {% block headjs %}
-    <script type="text/javascript" src="http://www.google.com/recaptcha/api/js/recaptcha_ajax.js"></script>
+    <script type="text/javascript" src="https://www.google.com/recaptcha/api/js/recaptcha_ajax.js"></script>
 
     <script>
         jQuery(document).ready(function() {
@@ -24,7 +24,7 @@
             });
 
             jQuery('#body').click(function() {
-                if (jQuery.trim(jQuery('#body').val()) == 'Message') {
+                if (jQuery.trim(jQuery('#body').text()) == 'Message') {
                     jQuery('#body').val('');
                 }
             });

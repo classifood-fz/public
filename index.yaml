@@ -1,37 +1,45 @@
 indexes:
 
-- kind: Search
+- kind: Search_Cache
   properties:
   - name: search_term
+  - name: profile_hash
   - name: start
-  - name: nutrients
-  - name: allergens
-  - name: additives
-  - name: ingredients
 
-- kind: Pantry_Product
+- kind: Label
   properties:
   - name: user_id
-  - name: barcode
-
-- kind: Pantry_Product
-  properties:
-  - name: user_id
-  - name: add_datetime
-    direction: desc
-
-- kind: Shopping_List_Product
-  properties:
-  - name: user_id
-  - name: barcode
-
-- kind: Shopping_List_Product
-  properties:
-  - name: user_id
-  - name: add_datetime
-    direction: desc
-
-- kind: Ingredient
-  properties:
   - name: name
-  - name: grade
+
+- kind: Label
+  properties:
+  - name: user_id
+  - name: sub_id
+
+- kind: Label
+  properties:
+  - name: user_id
+  - name: name
+  - name: sub_id
+
+- kind: Pantry_Product
+  properties:
+  - name: user_id
+  - name: barcode
+
+- kind: Pantry_Product
+  properties:
+  - name: user_id
+  - name: added_on
+    direction: desc
+
+- kind: Shopping_List_Product
+  properties:
+  - name: user_id
+  - name: barcode
+
+- kind: Shopping_List_Product
+  properties:
+  - name: user_id
+  - name: added_on
+    direction: desc

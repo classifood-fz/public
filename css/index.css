@@ -12,16 +12,30 @@ h4 {
 
 #box {
     padding: 10px;
-    border: 4px double #000000;
-    border-radius: 20px;
+    /*border: 4px double #000000;
+    border-radius: 20px;*/
     text-align: center;
+}
+
+.intro {
+    font-size: 16px;
+    line-height: 28px;
 }
 
 .word {
     display: inline-block;
-    margin: 10px 20px;
+    margin: 8px 20px;
     color: #088a68;
     white-span: nowrap;
+}
+
+.title {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.date {
+    font-family: Times;
 }
 
 @media (max-width: 800px) {

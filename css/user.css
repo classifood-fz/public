@@ -1,20 +1,16 @@
-body {
-    background-color: #b8dcc3;
-}
-
 #box {
     width: 800px;
     margin: 0 auto;
     background-color: #ffffff;
 }
 
-#dropdown {
-    margin: 10px 20px;
-}
-
 #icons {
     border-spacing: 0;
     margin: 0 20px;
+}
+
+#menu_btn {
+    margin: 20px;
 }
 
 #content_body {
@@ -37,27 +33,8 @@ body {
     float: right;
 }
 
-#bottom_links {    
-    width: 800px;
-    margin: 0 auto;
-    background-color: #ffffff;
-}
-
-#bottom_filler {
-    width: 800px;
-    margin: 0 auto;
-}
-
 @media (max-width: 800px) {
     #box {
         width: 100%;
-    }
-
-    #bottom_links {
-	width: 100%;
-    }
-
-    #bottom_filler {
-	width: 100%;
     }
 }

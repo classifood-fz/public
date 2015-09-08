@@ -25,23 +25,56 @@
 
         <link rel="icon" type="image/ico" href="/img/favicon.ico" />
         <link type="text/css" rel="stylesheet" href="/css/jquery-ui-custom-theme/jquery-ui-1.10.3.custom.min.css" />
+        <link href="/css/jquery.mmenu.css" type="text/css" rel="stylesheet" />
+        <link href="/css/custom_mmenu.css" type="text/css" rel="stylesheet" />
+        <link href="/css/mmenu_sizing.css" type="text/css" rel="stylesheet" />
         <link type="text/css" rel="stylesheet" href="/css/base.css" />
-        <link type="text/css" rel="stylesheet" href="/css/dropdown.css" />
         {% block headcss %}
         {% endblock headcss %}
 
         <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
         <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.1/jquery-ui.min.js"></script>
+        <script src="/js/jquery.mmenu.min.js" type="text/javascript"></script>
         <script type="text/javascript" src="/js/string.js"></script>
         <script type="text/javascript" src="/js/cookie.js"></script>
-        <script type="text/javascript" src="/js/dropdown.js"></script>
+        <script type="text/javascript" src="/js/display.js"></script>
         <script>
             jQuery(document).ready(function() {
-                jQuery('.button').button();
-
                 if (!browser_accepts_cookies()) {
                     jQuery('#cookies_not_accepted_message').show();
                 }
+
+                if (!get_cookie('euid')) {
+                    jQuery('#menu').html('\
+                        <ul>\
+                            <li>\
+                                <a href="/signin">\
+                                    <table><tbody>\
+                                        <tr><td><img src="/img/signin.png" alt="signin.png" /></td><td>Sign In with Google</td></tr>\
+                                    </tbody></table>\
+                                </a>\
+                            </li>\
+                        </ul>\
+                    ');
+                }
+
+                jQuery('.button').button();
+                refreshBottom();
+
+                jQuery("#menu").mmenu();
+                jQuery("#menu_btn").click(function() {
+                    jQuery("#menu").data("mmenu").open();
+                });
+
+                jQuery('#signout').click(function() {
+                    delete_cookie('euid');
+                    delete_cookie('session_id');
+                    window.location.href = '/';
+                });
+            });
+
+            jQuery(window).resize(function() {
+                refreshBottom();
             });
         </script>
         {% block headjs %}
@@ -49,6 +82,39 @@
     </head>
 
     <body>
+        <nav id="menu">
+            <ul>
+                <li>
+                    <a href="/user/shopping_list">
+                        <table><tbody>
+                            <tr><td><img src="/img/menu_cart.png" alt="menu_cart.png" /></td><td>Shopping List</td></tr>
+                        </tbody></table>
+                    </a>
+                </li>
+                <li>
+                    <a href="/user/pantry">
+                        <table><tbody>
+                            <tr><td><img src="/img/menu_pantry.png" alt="menu_pantry.png" /></td><td>Pantry</td></tr>
+                        </tbody></table>
+                    </a>
+                </li>
+                <li>
+                    <a href="/user/profile">
+                        <table><tbody>
+                            <tr><td><img src="/img/menu_profile.png" alt="menu_profile.png" /></td><td>Profile</td></tr>
+                        </tbody></table>
+                    </a>
+                </li>
+                <li>
+                    <a id="signout">
+                        <table><tbody>
+                            <tr><td><img src="/img/signout.png" alt="signout.png" /></td><td>Sign Out</td></tr>
+                        </tbody></table>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
         {% block top %}
         {% endblock top %}
     
@@ -73,32 +139,9 @@
                 <a class="bottom_link" href="/terms_of_service">Terms of Service</a>
                 <a class="bottom_link" href="/privacy_policy">Privacy Policy</a>
                 <a class="bottom_link" href="/contact">Contact</a>
-                <span id="copyright" class="bottom_link">&#169; 2014 Classifood</span>
+                <span id="copyright" class="bottom_link">&#169; 2015 Classifood</span>
             </div>
             <div id="bottom_filler"></div>
         {% endblock bottom %}
-        <script>
-            jQuery(document).ready(function() {
-                /**
-                 * This script keeps #bottom_links at the bottom of the page
-                 * by switching between static and absolute positions, depending
-                 * the height of the document.
-                 */
-                if (jQuery(window).height() == jQuery(document).height()) {
-                    jQuery('#bottom_links').css('position', 'absolute').css('bottom', '0');
-                    jQuery('#bottom_filler').show();
-                }
-                jQuery(window).resize(function() {
-                    if (jQuery(window).height() == jQuery(document).height()) {
-                        jQuery('#bottom_links').css('position', 'absolute').css('bottom', '0');
-                        jQuery('#bottom_filler').show();
-                    }
-                    else {
-                        jQuery('#bottom_links').css('position', 'static');
-                        jQuery('#bottom_filler').hide();
-                    }
-                });
-            });
-        </script>
     </body>
 </html>

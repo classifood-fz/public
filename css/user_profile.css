@@ -38,6 +38,5 @@ input[type="checkbox"] {
 }
 
 .error {
-    display: none;
     color: #ff0000;
 }

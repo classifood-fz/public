@@ -1,0 +1,29 @@
+/* mmenu size config */
+.mm-menu {
+  width: 80%;
+  min-width: 220px;
+  max-width: 220px; }
+
+html.mm-opening .mm-slideout {
+  -webkit-transform: translate(80%, 0);
+  -moz-transform: translate(80%, 0);
+  -ms-transform: translate(80%, 0);
+  -o-transform: translate(80%, 0);
+  transform: translate(80%, 0); }
+
+@media all and (max-width: 275px) {
+  html.mm-opening .mm-slideout {
+    -webkit-transform: translate(220px, 0);
+    -moz-transform: translate(220px, 0);
+    -ms-transform: translate(220px, 0);
+    -o-transform: translate(220px, 0);
+    transform: translate(220px, 0); } }
+@media all and (min-width: 275px) {
+  html.mm-opening .mm-slideout {
+    -webkit-transform: translate(220px, 0);
+    -moz-transform: translate(220px, 0);
+    -ms-transform: translate(220px, 0);
+    -o-transform: translate(220px, 0);
+    transform: translate(220px, 0); } }
+
+/*# sourceMappingURL=mmenu_sizing.css.map */

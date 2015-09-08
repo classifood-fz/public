@@ -6,56 +6,40 @@ import re
 Capitalizes the first letter of every word
 """
 def cap_first_letter(s):
-    if isinstance(s, str) or isinstance(s, unicode):
-        letters = []
-        letters.append(s[0].upper())
+    if isinstance(s, basestring):
+        words = s.split(' ')
 
-        for i in range(1, len(s)):
-            if s[i-1] == ' ':
-                letters.append(s[i].upper())
+        for i in xrange(0, len(words)):
+            if words[i]:
+                words[i] = words[i][0].upper() + words[i][1:]
             else:
-                letters.append(s[i])
+                continue
 
-        return ''.join(letters)
+        return ' '.join(words)
 
-    else:
-        return ''
+    return s
 
 
 """
 Escapes single quote
 """
 def escape(s):
-    if isinstance(s, str) or isinstance(s, unicode):
-        if len(s) == 0:
-            return s
-
-        # re.sub(<pattern>, <replacement>, <input string>)
+    if isinstance(s, basestring):
         s = re.sub('\\\'', '\\\'', s)
         s = re.sub('\\\\', '\\\\', s)
 
-        return s
-
-    else:
-        return ''
+    return s
 
 
 """
 Unescapes single quote
 """
 def unescape(s):
-    if isinstance(s, str) or isinstance(s, unicode):
-        if len(s) == 0:
-            return s
-
-        # re.sub(<pattern>, <replacement>, <input string>)
+    if isinstance(s, basestring):
         s = re.sub('\\\\\\\'', '\'', s)
         s = re.sub('\\\\\\\\', r'\\', s) # re does not allow '\\' endings, therefore raw
 
-        return s
-
-    else:
-        return ''
+    return s
 
 
 """

@@ -7,56 +7,22 @@
 {% endblock headcss2 %}
 
 {% block headjs2 %}
-    {% if not user.is_premium %}
-        <script src="https://wallet.google.com/inapp/lib/buy.js"></script>
-        <script>
-            function upgrade() {
-                google.payments.inapp.buy({
-                    'jwt': '{{ upgrade_token }}',
-                    'success': function(){
-                        window.location.href = '/user/profile';
-                    },
-                    'failure': function(){
-                        jQuery('#upgrade_error').show();
-                    },
-                });
-            }
-        </script>
-    {% endif %}
-
     <script type="text/javascript" src="/js/profile_utils.js"></script>
     <script>
-        /**/
-        function search_error() {
-            jQuery('#ingredient_message').text('An error occurred. Please try again later.').show();
+        function show_error(msgBox) {
+            jQuery(msgBox).addClass('error').text('An error occurred. Please try again later.');
         }
 
-        /*
-         * Show waiting message while searching for ingredients
-         */
-        function before_search() {
-            jQuery('#ingredient_message').text('Please wait...').show();
-        }
-
-        /*
-         * Removes HTML in #search_results and then appends new ingredients into #search_results
-         */
-        function after_search(returned_json) {
-            if (returned_json.result == 'success') {
-                jQuery('#ingredient_message').hide();
-                jQuery('#search_results').html('');
-                if (returned_json.total_found != 0) {
-                    jQuery('#search_results').append('%s to %s of %s'.replace2('%s', [parseInt(returned_json.start)+1, parseInt(returned_json.start)+returned_json.ingredients.length, returned_json.total_found]));
-                    if (returned_json.start-10 >= 0)
-                        jQuery('#search_results').append('&nbsp;<a onclick="before_search(); search_ingredients(\'%s\', %s, after_search, search_error);">Previous</a>'.replace2('%s', [jQuery.trim(jQuery('#search_box').val()), returned_json.start-10]));
-                    if (returned_json.start+10 < returned_json.total_found)
-                        jQuery('#search_results').append('&nbsp;<a onclick="before_search(); search_ingredients(\'%s\', %s, after_search, search_error);">Next</a>'.replace2('%s', [jQuery.trim(jQuery('#search_box').val()), returned_json.start+10]));
-                    jQuery('#search_results').append('<br><br>');
-                    returned_json.ingredients.forEach(function(element) {
-                        jQuery('#search_results').append('<div><input class="ingredient" type="checkbox" name="%s" /> %s<input type="hidden" name="%s Id" value="%s" /></div>'.replace2('%s', [element.ingredient_name, element.ingredient_name, element.ingredient_name, element.ingredient_id]));
-                    });
-                } else jQuery('#search_results').append('No ingredients were found.');
-            } else search_error();
+        function show_success(checkbox, msgBox, success) {
+            if (success) {
+                jQuery(msgBox).addClass('message').text('Updated.');
+                setTimeout(function() {
+                   jQuery(msgBox).removeClass('message').text('');
+                }, 1000);
+            } else {
+                jQuery(checkbox).prop('checked', !jQuery(checkbox).prop('checked'));
+                show_error(msgBox);
+            }
         }
 
         jQuery(document).ready(function() {
@@ -65,31 +31,14 @@
              */
             jQuery('.nutrient_container').on('click', '.list_item > .nutrient', function() {
                 var nutrient = jQuery(this).attr('name');
-                var self = jQuery(this);
-                var parent = jQuery(this).parent();
-                var show_error = function() {
-                    jQuery('#nutrient_message').text('An error occurred. Please try again later.').show();
+                var self = this;
+                var on_success = function(returned_json) {
+                    show_success(self, jQuery('#nutrient_message'), returned_json.result == 'success');
                 }
-                var on_added = function(returned_json) {
-                    if (returned_json.result == 'success') {
-                        jQuery('#nutrients1').append(parent).append('&nbsp;');
-                        jQuery('#nutrient_message').hide();
-                    } else {
-                        jQuery(self).prop('checked', false);
-                        show_error();
-                    }
+                var on_error = function() {
+                    show_error(jQuery('#nutrient_message'));
                 }
-                var on_removed = function(returned_json) {
-                    if (returned_json.result == 'success') {
-                        jQuery('#nutrients2').append(parent).append('&nbsp;');
-                        jQuery('#nutrient_message').hide();
-                    } else {
-                        jQuery(self).prop('checked', true);
-                        show_error();
-                    }
-                }
-
-                jQuery(this).is(':checked') ? add_nutrient(nutrient, on_added, show_error) : remove_nutrient(nutrient, on_removed, show_error);
+                jQuery(self).is(':checked') ? add_nutrient(nutrient, on_success, on_error) : remove_nutrient(nutrient, on_success, on_error);
             });
 
             /*
@@ -97,31 +46,15 @@
              */
             jQuery('.allergen_container').on('click', '.list_item > .allergen', function() {
                 var allergen = jQuery(this).attr('name');
-                var self = jQuery(this);
-                var parent = jQuery(this).parent();
-                var show_error = function() {
-                    jQuery('#allergen_message').text('An error occurred. Please try again later.').show();
+                var self = this;
+                var on_success = function(returned_json) {
+                    show_success(self, jQuery('#allergen_message'), returned_json.result == 'success');
                 }
-                var on_added = function(returned_json) {
-                    if (returned_json.result == 'success') {
-                        jQuery('#allergens1').append(parent).append('&nbsp;');
-                        jQuery('#allergen_message').hide();
-                    } else {
-                        jQuery(self).prop('checked', false);
-                        show_error();
-                    }
-                }
-                var on_removed = function(returned_json) {
-                    if (returned_json.result == 'success') {
-                        jQuery('#allergens2').append(parent).append('&nbsp;');
-                        jQuery('#allergen_message').hide();
-                    } else {
-                        jQuery(self).prop('checked', true);
-                        show_error();
-                    }
+                var on_error = function(returned_json) {
+                    show_error(jQuery('#allergen_message'));
                 }
                 
-                jQuery(this).is(':checked') ? add_allergen(allergen, on_added, show_error) : remove_allergen(allergen, on_removed, show_error);
+                jQuery(self).is(':checked') ? add_allergen(allergen, on_success, on_error) : remove_allergen(allergen, on_success, on_error);
             });
 
             /*
@@ -129,215 +62,124 @@
              */
             jQuery('.additive_container').on('click', '.list_item > .additive', function() {
                 var additive = jQuery(this).attr('name');
-                var self = jQuery(this);
-                var parent = jQuery(this).parent();
-                var show_error = function() {
-                    jQuery('#additive_message').text('An error occurred. Please try again later.').show();
+                var self = this;
+                var on_success = function(returned_json) {
+                    show_success(self, jQuery('#additive_message'), returned_json.result == 'success');
                 }
-                var on_added = function(returned_json) {
-                    if (returned_json.result == 'success') {
-                        jQuery('#additives1').append(parent).append('&nbsp;');
-                        jQuery('#additive_message').hide();
-                    } else {
-                        jQuery(self).prop('checked', false);
-                        show_error();
-                    }
-                }
-                var on_removed = function(returned_json) {
-                    if (returned_json.result == 'success') {
-                        jQuery('#additives2').append(parent).append('&nbsp;');
-                        jQuery('#additive_message').hide();
-                    } else {
-                        jQuery(self).prop('checked', true);
-                        show_error();
-                    }
+                var on_error = function(returned_json) {
+                    show_error(jQuery('#additive_message'));
                 }
                 
-                jQuery(this).is(':checked') ? add_additive(additive, on_added, show_error) : remove_additive(additive, on_removed, show_error);
-            });
-
-            /*
-             * Adds or removes an ingredient
-             */
-            jQuery('.ingredient_container').on('click', 'div > .ingredient', function() {
-                var ingredient_name = jQuery(this).attr('name');
-                var ingredient_id = jQuery('input[name="%s Id"]'.replace2('%s', [ingredient_name])).attr('value');
-                var self = jQuery(this);
-                var parent = jQuery(this).parent();
-                var show_error = function() {
-                    jQuery('#ingredient_message').text('An error occurred. Please try again later.').show();
-                }
-                var show_error2 = function() {
-                    jQuery('#ingredient_message').text('This ingredient is already on your list').show();
-                }
-                var on_added = function(returned_json) {
-                    if (returned_json.result == 'success') {
-                        jQuery('#ingredients').append(parent);
-                        jQuery('#ingredient_message').hide();
-                    } else if (returned_json.result == 'exists') {
-                        jQuery(self).prop('checked', false);
-                        show_error2();
-                    } else {
-                        jQuery(self).prop('checked', false);
-                        show_error();
-                    }
-                }
-                var on_removed = function(returned_json) {
-                    if (returned_json.result == 'success') {
-                        jQuery(parent).remove();
-                        jQuery('#additive_message').hide();
-                    } else {
-                        jQuery(self).prop('checked', true);
-                        show_error();
-                    }
-                }
-
-                jQuery(this).is(':checked') ? add_ingredient(ingredient_id, ingredient_name, on_added, show_error) : remove_ingredient(ingredient_id, ingredient_name, on_removed, show_error);
-            });
-
-            /*
-             * Call search_ingredients() on #search_box press-enter and on #search_btn click
-             * if #search_box is not empty
-             */
-            jQuery('#search_box').click(function(){
-                jQuery(this).val('');
-            }).keypress(function(element) {
-                if (element.which == 13 && jQuery.trim(jQuery(this).val()) != '') {
-                    before_search();
-                    search_ingredients(jQuery.trim(jQuery(this).val()), 0, after_search, search_error);
-                }
-            });
-            jQuery('#search_btn').click(function(){
-                if (jQuery.trim(jQuery('#search_box').val()) != '') {
-                    before_search();
-                    search_ingredients(jQuery.trim(jQuery('#search_box').val()), 0, after_search, search_error);
-                }
+                jQuery(self).is(':checked') ? add_additive(additive, on_success, on_error) : remove_additive(additive, on_success, on_error);
             });
         });
     </script>
 {% endblock headjs2 %}
 
 {% block section_icon %}
-    {% if user.is_premium %}
-        <a href="/"><img src="/img/premium_profile_49x49.png" alt="profile.png" /></a>
-    {% else %}
+    {% if user.group_id == 1 %}
         <a href="/"><img src="/img/profile_49x49.png" alt="profile.png" /></a>
+    {% else %}
+        <a href="/"><img src="/img/premium_profile_49x49.png" alt="profile.png" /></a>
     {% endif %}
 {% endblock section_icon %}
 
 {% block content_body %}
-    <p>Add nutrient, allergen, additive, and ingredient flags onto your profile to tailor search results. Adding too many flags may slow down search performance.</p>
+    {% if show_expired %}
+        <span class="error">Your subscription has expired.</span>
+    {% endif %}
 
-    {% if not user.is_premium %}
-        <p><a class="always_blue" onclick="upgrade();">Upgrade</a> to premium to gain access to all nutrients, allergens, and additives. <span id="upgrade_error" class="error">Failed to upgrade. Please try again later.</span></p>
+    {% if show_failed_upgrade %}
+        <span class="error">Upgrade failed. Please try again.</span>
+    {% endif %}
+
+    {% if user.group_id == 1 %}
+    <p>
+        Gain access to all 17 nutrients, 15 food allergens, and 35 food additives for $8 per 6 months.
+        <form action="/checkout" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="name" value="Classifood Upgrade" />
+            <input type="hidden" name="description" value="Upgrade to give access to all available nutrients, allergens, and additives." />
+            <input type="hidden" name="price" value="800" />
+            <script
+              src="https://checkout.stripe.com/checkout.js" class="stripe-button"
+              data-key="{{ stripe_public_key }}"
+              data-image="/img/classifood_icon_150x150.png"
+              data-name="Classifood Upgrade"
+              data-description="Upgrade to give access to all available nutrients, allergens, and additives."
+              data-amount="800"
+              data-currency="USD"
+              data-label="Upgrade"
+              data-panel-label="Pay"
+              data-zip-code="true">
+            </script>
+        </form>
+    </p>
+    <br>
     {% endif %}
 
     <h3>Nutrients</h3>
     <hr>
-    Select the nutrients you want to include in search results.<br><br>
+    Select any nutrients you want to include in search results.<br><br>
 
-    <div id="nutrients1" class="nutrient_container">
-        {% for nutrient in user.nutrients %}
-            <span class="list_item"><input class="nutrient" type="checkbox" name="{{ nutrient }}" checked /> {{ nutrient }}</span>
-        {% endfor %}        
-    </div>    
-    <div id="nutrients2" class="nutrient_container">
-        {% if user.is_premium %}
-            {% for nutrient, allow in known_nutrients %}
-                {% if nutrient not in user.nutrients %}
-                    <span class="list_item"><input class="nutrient" type="checkbox" name="{{ nutrient }}" /> {{ nutrient }}</span>
-                {% endif %}
-            {% endfor %}
-        {% else %}
-            {% for nutrient, allow in known_nutrients %}
-                {% if allow and nutrient not in user.nutrients %}
-                    <span class="list_item"><input class="nutrient" type="checkbox" name="{{ nutrient }}" /> {{ nutrient }}</span>
-                {% elif not allow %}
-                    <span class="list_item"><span class="fake_checkbox"></span> {{ nutrient }}</span>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
+    <div id="nutrients" class="nutrient_container">
+        {% for nutrient, allow in known_nutrients %}
+            {% if nutrient in user_nutrients %}
+                <span class="list_item"><input class="nutrient" type="checkbox" name="{{ nutrient }}" checked /> {{ nutrient }}</span>
+            {% elif allow and nutrient not in user_nutrients %}
+                <span class="list_item"><input class="nutrient" type="checkbox" name="{{ nutrient }}" /> {{ nutrient }}</span>
+            {% elif not allow and nutrient not in user_nutrients and user.group_id == 2 %}
+                <span class="list_item"><input class="nutrient" type="checkbox" name="{{ nutrient }}" /> {{ nutrient }}</span>
+            {% else %}
+                <span class="list_item"><span class="fake_checkbox"></span> {{ nutrient }}</span>
+            {% endif %}
+        {% endfor %}
     </div>
-    <span id="nutrient_message" class="hidden"></span>
-    <br><br><br><br>
+    <br>
+    <span id="nutrient_message"></span>
+    <br><br>
 
 
     <h3>Allergen Flags</h3>
     <hr>
     Select any food allergens you want to flag.<br><br>
 
-    <div id="allergens1" class="allergen_container">
-        {% for allergen in user.allergens %}
-            <span class="list_item"><input class="allergen" type="checkbox" name="{{ allergen }}" checked /> {{ allergen }}</span>
-        {% endfor %}        
-    </div>    
-    <div id="allergens2" class="allergen_container">
-        {% if user.is_premium %}
-            {% for allergen, allow in known_allergens %}
-                {% if allergen not in user.allergens %}
-                    <span class="list_item"><input class="allergen" type="checkbox" name="{{ allergen }}" /> {{ allergen }}</span>
-                {% endif %}
-            {% endfor %}
-        {% else %}
-            {% for allergen, allow in known_allergens %}
-                {% if allow and allergen not in user.allergens %}
-                    <span class="list_item"><input class="allergen" type="checkbox" name="{{ allergen }}" /> {{ allergen }}</span>
-                {% elif not allow %}
-                    <span class="list_item"><span class="fake_checkbox"></span> {{ allergen }}</span>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
+    <div id="allergens" class="allergen_container">
+        {% for allergen, allow in known_allergens %}
+            {% if allergen in user_allergens %}
+                <span class="list_item"><input class="allergen" type="checkbox" name="{{ allergen }}" checked/> {{ allergen }}</span>
+            {% elif allow and allergen not in user_allergens %}
+                <span class="list_item"><input class="allergen" type="checkbox" name="{{ allergen }}" /> {{ allergen }}</span>
+            {% elif not allow and allergen not in user_allergens and user.group_id == 2 %}
+                <span class="list_item"><input class="allergen" type="checkbox" name="{{ allergen }}" /> {{ allergen }}</span>
+            {% else %}
+                <span class="list_item"><span class="fake_checkbox"></span> {{ allergen }}</span>
+            {% endif %}
+        {% endfor %}
     </div>
-    <span id="allergen_message" class="hidden"></span>
-    <br><br><br><br>
+    <br>
+    <span id="allergen_message"></span>
+    <br><br>
 
 
     <h3>Additive Flags</h3>
     <hr>
     Select any food additives you want to flag.<br><br>
 
-    <div id="additives1" class="additive_container">
-        {% for additive in user.additives %}
-            <span class="list_item"><input class="additive" type="checkbox" name="{{ additive }}" checked /> {{ additive }}</span>
-        {% endfor %}
-    </div>
-    <div id="additives2" class="additive_container">
-        {% if user.is_premium %}
-            {% for additive, allow in known_additives %}
-                {% if additive not in user.additives %}
-                    <span class="list_item"><input class="additive" type="checkbox" name="{{ additive }}" /> {{ additive }}</span>
-                {% endif %}
-            {% endfor %}
-        {% else %}
-            {% for additive, allow in known_additives %}
-                {% if allow and additive not in user.additives %}
-                    <span class="list_item"><input class="additive" type="checkbox" name="{{ additive }}" /> {{ additive }}</span>
-                {% elif not allow %}
-                    <span class="list_item"><span class="fake_checkbox"></span> {{ additive }}</span>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-    </div>
-    <span id="additive_message" class="hidden"></span>
-    <br><br><br><br>
-
-    <h3>Ingredient Flags</h3>
-    <hr>
-    Search for ingredients to add as flags.<br><br>
-
-    <div id="ingredients" class="ingredient_container">
-        {% for ingredient_id, ingredient_name in user.ingredients %}
-            <div>
-                <input class="ingredient" type="checkbox" name="{{ ingredient_name }}" checked /> {{ ingredient_name }}
-                <input type="hidden" name="{{ ingredient_name}} Id" value="{{ ingredient_id }}" />
-            </div>
+    <div id="additives" class="additive_container">
+        {% for additive, allow in known_additives %}
+            {% if additive in user_additives %}
+                <span class="list_item"><input class="additive" type="checkbox" name="{{ additive }}" checked /> {{ additive }}</span>
+            {% elif allow and additive not in user_additives %}
+                <span class="list_item"><input class="additive" type="checkbox" name="{{ additive }}" /> {{ additive }}</span>
+            {% elif not allow and additive not in user_additives and user.group_id == 2 %}
+                <span class="list_item"><input class="additive" type="checkbox" name="{{ additive }}" /> {{ additive }}</span>
+            {% else %}
+                <span class="list_item"><span class="fake_checkbox"></span> {{ additive }}</span>
+            {% endif %}
         {% endfor %}
     </div>
     <br>
-    <input id="search_box" type="text" name="q" value="Enter ingredient name" />
-    <input id="search_btn" class="button" type="submit" value="" />
+    <span id="additive_message"></span>
     <br><br>
-    <div id="search_results" class="ingredient_container"></div>
-    <br>
-    <span id="ingredient_message" class="hidden"></span>
 {% endblock content_body %}

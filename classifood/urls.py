@@ -12,6 +12,7 @@ urlpatterns = patterns(
     url(r'^add_to_shopping_list$', 'classifood.views.add_to_shopping_list'),
     url(r'^authenticate$', 'classifood.views.authenticate'),
     url(r'^categories$', 'classifood.views.categories'),
+    url(r'^checkout$', 'classifood.views.checkout'),
     url(r'^contact$', 'classifood.views.contact'),
     url(r'^privacy_policy$', 'classifood.views.privacy_policy'),
     url(r'^remove_additive$', 'classifood.views.remove_additive'),
@@ -32,7 +33,6 @@ urlpatterns = patterns(
     url(r'^user/pantry$', 'classifood.views.user_pantry'),
     url(r'^user/profile$', 'classifood.views.user_profile'),
     url(r'^user/shopping_list$', 'classifood.views.user_shopping_list'),
-    url(r'^verify_purchase$', 'classifood.views.verify_purchase'),
 )
 
 handler404 = 'classifood.views.err404'

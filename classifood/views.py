@@ -4,117 +4,149 @@ from django.utils.safestring import mark_safe
 from django.template import RequestContext
 from django.http import HttpResponse
 
-from google.appengine.api import mail, users
+from google.appengine.api import mail
 from google.appengine.ext import ndb
 
-from classifood import label, utils, settings, crypto, constants
-from classifood.models import User, Temp_User, Order, Search, Shopping_List_Product, Pantry_Product
+from classifood import label_api, utils, settings, crypto, constants
+from classifood.models import User, Order, Search_Cache, Shopping_List_Product, Pantry_Product, Label
 
 from oauth2client.client import OAuth2WebServerFlow, FlowExchangeError
 
 from recaptcha.client import captcha
 from datetime import datetime
+from datetime import timedelta
 
-import httplib2
+import stripe
 import json
 import time
-import jwt
 
-"""
-Returns the about page
-"""
 def about(request):
+    """
+    Returns the about page
+    """
     return render_to_response('about.html')
 
 
-"""
-Adds an additive to a user's additive list
-"""
 def add_additive(request):
-    session_id = request.get_signed_cookie('session_id', default=None)
-    user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
-    user = User.get_by_id(user_id) if user_id else None
-    additive = request.POST.get('additive', '')
-
-    if session_id and user and additive and additive not in user.additives:
-        user.additives.append(additive)
-        set_profile = label.set_profile(session_id, user)
-        if 'result' in set_profile and set_profile['result']  == 'success':
-            user.put()
-            return HttpResponse('{"result": "success"}', content_type='application/json')
-
-    return HttpResponse('{"result": "failure"}', content_type='application/json')
-
-
-"""
-Adds an allergen to a user's allergen list
-"""
-def add_allergen(request):
-    session_id = request.get_signed_cookie('session_id', default=None)
-    user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
-    user = User.get_by_id(user_id) if user_id else None
-    allergen = request.POST.get('allergen', '')
-
-    if session_id and user and allergen and allergen not in user.allergens:
-        user.allergens.append(allergen)
-        set_profile = label.set_profile(session_id, user)
-        if 'result' in set_profile and set_profile['result']  == 'success':
-            user.put()
-            return HttpResponse('{"result": "success"}', content_type='application/json')
-
-    return HttpResponse('{"result": "failure"}', content_type='application/json')
-
-
-"""
-Adds a nutrient to a user's nutrient list
-"""
-def add_nutrient(request):
-    session_id = request.get_signed_cookie('session_id', default=None)
-    user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
-    user = User.get_by_id(user_id) if user_id else None
-    nutrient = request.POST.get('nutrient', '')
-
-    if session_id and user and nutrient and nutrient not in user.nutrients:
-        user.nutrients.append(nutrient)
-        set_profile = label.set_profile(session_id, user)
-        if 'result' in set_profile and set_profile['result']  == 'success':
-            user.put()
-            return HttpResponse('{"result": "success"}', content_type='application/json')
-
-    return HttpResponse('{"result": "failure"}', content_type='application/json')
-
-
-"""
-Adds an ingredient to a user's ingredient list
-"""
-def add_ingredient(request):
-    session_id = request.get_signed_cookie('session_id', default=None)
-    user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
-    user = User.get_by_id(user_id) if user_id else None
-    pair = [request.POST.get('ingredient_id', ''), request.POST.get('ingredient_name', '')]
-
+    """
+    Adds an additive to a user's additive list
+    """
     try:
-        pair[0] = int(pair[0])
-    except ValueError:
-        return HttpResponse('{"result": "failure"}', content_type='application/json')
+        session_id = request.get_signed_cookie('session_id', default=None)
+        euid = request.COOKIES.get('euid')
+        user = User.get_by_id(crypto.decrypt(euid))
+        additive_name = request.POST.get('additive', '')
+        additive = Label.query(
+            Label.user_id == user.key.id(),
+            Label.name == additive_name).get(keys_only=True)
 
-    if session_id and user and pair[0] and pair[1]:
-        if pair in user.ingredients:
-            return HttpResponse('{"result": "exists"}', content_type='application/json')
+        if session_id and not additive:
+            profile = user.get_profile()
 
-        user.ingredients.append(pair)
-        status = label.add_ingredient(session_id, pair[0])
-        if 'result' in status and status['result']  == 'success':
-            user.put()
-            return HttpResponse('{"result": "success"}', content_type='application/json')
+            for a in profile['additives']:
+                if a['name'] == additive_name: a['value'] = 'true'
+
+            response = label_api.set_profile(session_id, profile)
+            if response.get('result')  == 'success':
+                Label(user_id=user.key.id(), name=additive_name).put_async()
+                return HttpResponse('{"result": "success"}', content_type='application/json')
+    except:
+        pass
 
     return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
-"""
-Adds a product to the Pantry_Product table
-"""
+def add_allergen(request):
+    """
+    Adds an allergen to a user's allergen list
+    """
+    try:
+        session_id = request.get_signed_cookie('session_id', default=None)
+        euid = request.COOKIES.get('euid')
+        user = User.get_by_id(crypto.decrypt(euid))
+        allergen_name = request.POST.get('allergen', '')
+        allergen = Label.query(
+            Label.user_id == user.key.id(),
+            Label.name == allergen_name).get(keys_only=True)
+
+        if session_id and not allergen:
+            profile = user.get_profile()
+
+            for a in profile['allergens']:
+                if a['name'] == allergen_name: a['value'] = 'true'
+
+            response = label_api.set_profile(session_id, profile)
+
+            if response.get('result')  == 'success':
+                Label(user_id = user.key.id(), name = allergen_name).put_async()
+                return HttpResponse('{"result": "success"}', content_type='application/json')
+    except:
+        pass
+
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
+
+
+def add_ingredient(request):
+    """
+    Adds an ingredient to a user's ingredient list
+    """
+    try:
+        session_id = request.get_signed_cookie('session_id', default=None)
+        user_id = crypto.decrypt(request.COOKIES.get('euid', ''))
+        ingredient_id = request.POST.get('ingredient_id', '')
+        ingredient_name = request.POST.get('ingredient_name', '')
+        ingredient = Label.query(
+            Label.user_id == user_id,
+            Label.name == ingredient_name,
+            Label.sub_id == ingredient_id).get(keys_only=True)
+
+        if session_id and not ingredient:
+            response = label_api.add_ingredient(session_id, ingredient_id)
+
+            if response.get('result')  == 'success':
+                Label(user_id=user_id, name=ingredient_name, sub_id=ingredient_id).put_async()
+                return HttpResponse('{"result": "success"}', content_type='application/json')
+
+    except:
+        pass
+
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
+
+
+def add_nutrient(request):
+    """
+    Adds a nutrient to a user's nutrient list
+    """
+    try:
+        session_id = request.get_signed_cookie('session_id', default=None)
+        euid = request.COOKIES.get('euid')
+        user = User.get_by_id(crypto.decrypt(euid))
+        nutrient_name = request.POST.get('nutrient', '')
+        nutrient = Label.query(
+            Label.user_id == user.key.id(),
+            Label.name == nutrient_name).get(keys_only=True)
+
+        if session_id and not nutrient:
+            profile = user.get_profile()
+
+            for n in profile['nutrients']:
+                if n['name'] == nutrient_name: n['value'] = 'true'
+
+            response = label_api.set_profile(session_id, profile)
+
+            if response.get('result')  == 'success':
+                Label(user_id = user.key.id(), name = nutrient_name).put_async()
+                return HttpResponse('{"result": "success"}', content_type='application/json')
+    except:
+        pass
+
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
+
+
 def add_to_pantry(request):
+    """
+    Adds a product to the Pantry_Product table
+    """
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     user = User.get_by_id(user_id) if user_id else None
     barcode = request.POST.get('barcode', '')
@@ -128,10 +160,10 @@ def add_to_pantry(request):
     return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
-"""
-Adds a product to the Shopping_List_Product table
-"""
 def add_to_shopping_list(request):
+    """
+    Adds a product to the Shopping_List_Product table
+    """
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     user = User.get_by_id(user_id) if user_id else None
     barcode = request.POST.get('barcode', '')
@@ -145,11 +177,11 @@ def add_to_shopping_list(request):
     return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
-"""
-Get credentials from Google using code from client,
-and then check if the user already exists in ndb.
-"""
 def authenticate(request):
+    """
+    Get credentials from Google using code from client,
+    and then check if the user already exists in ndb.
+    """
     try:
         oauth_flow = OAuth2WebServerFlow(
             client_id=settings.GOOGLE_CLIENT['web']['client_id'],
@@ -164,79 +196,132 @@ def authenticate(request):
         return HttpResponse('{"result":"failure"}', content_type='application/json')
     else:
         user = User.get_by_id(credentials['id_token']['sub'])
+
         if not user:
-            refr_token = credentials['refresh_token'] if 'refresh_token' in credentials else None
             user = User(
                 id = credentials['id_token']['sub'],
                 email = credentials['id_token']['email'],
-                nutrients = map(lambda x: x['name'], settings.LABEL_DEFAULT_PROFILE['nutrients']),
-                allergens = map(lambda x: x['name'], settings.LABEL_DEFAULT_PROFILE['allergens']),
-                additives = map(lambda x: x['name'], settings.LABEL_DEFAULT_PROFILE['additives']),
-                ingredients = map(lambda x: [x['ingredientid'], x['name']], settings.LABEL_DEFAULT_PROFILE['myingredients']),
-                refresh_token = refr_token)
+                refresh_token = credentials.get('refresh_token'))
             user.put()
 
-        if user:
-            session = label.create_session(user_id=user.key.id())
-            session_id = session['session_id'] if 'session_id' in session else None
+        try:
+            uid = user.key.id()
+            session = label_api.create_session(user_id=uid, app_id=uid, device_id=uid)
+            session_id = session.get('session_id')
+
+            if not session_id:
+                raise Exception
 
             # Must set profile before adding ingredients
-            label.set_profile(session_id, user)
+            response = label_api.set_profile(session_id, user.get_profile())
 
-            for ingredient in user.ingredients:
-                label.add_ingredient(session_id, ingredient[0])
+            if response.get('result') != 'success':
+                raise Exception
 
-            response = HttpResponse(json.dumps({"result": "success", "euid": crypto.encrypt(user.key.id())}), content_type='application/json')
+            for label in Label.query(Label.user_id == uid, Label.sub_id != '').fetch():
+                label_api.add_ingredient(session_id, label.sub_id)
+
+            response = HttpResponse(json.dumps({
+                "success": True,
+                "euid": crypto.encrypt(uid)
+            }), content_type='application/json')
+
             response.set_signed_cookie('session_id', session_id)
+
             return response
-        
-    return HttpResponse('{"result": "failure"}', content_type='application/json')
+        except:
+            pass
+
+    return HttpResponse('{"success": false}', content_type='application/json')
 
 
-"""
-Returns the categories page
-"""
 def categories(request):    
-    return render_to_response('categories.html', {'categories': mark_safe(json.dumps(constants.categories))}, RequestContext(request))
+    """
+    Returns the categories page
+    """
+    return render_to_response(
+        'categories.html', {
+            'categories': mark_safe(json.dumps(constants.categories))}, 
+        RequestContext(request))
 
 
-"""
-Returns the contact form page.
-"""
 def contact(request):
-    return render_to_response('contact.html', {'recaptcha_public_key': settings.RECAPTCHA_PUBLIC_KEY}, RequestContext(request))
+    """
+    Returns the contact form page.
+    """
+    return render_to_response(
+        'contact.html', {
+            'recaptcha_public_key': settings.RECAPTCHA_PUBLIC_KEY}, 
+        RequestContext(request))
 
 
-"""
-Deletes a user's pantry
-"""
+def checkout(request):
+    """
+    Stripe checkout
+    """
+    user_id = crypto.decrypt(request.COOKIES.get('euid', ''))
+    user = User.get_by_id(user_id)
+
+    if not user:
+        return redirect('/')
+
+    try:
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        charge = stripe.Charge.create(
+            amount=800, # amount in cents
+            currency='usd',
+            source=request.POST.get('stripeToken', ''),
+            description='Classifood upgrade for {0}'.format(request.POST.get('stripeEmail'))
+        )
+
+        if charge.get('status') != 'succeeded':
+            raise Exception
+    except:
+        print 'Stripe Error: Failed to charge user {0}'.format(user_id)
+        return redirect('/user/profile?upgrade_status=0')
+    else:
+        Order(user_id = user_id,
+              name = request.POST.get('name'),
+              description = request.POST.get('description'),
+              price = int(request.POST.get('price'))).put()
+        user.group_id = 2
+        user.upgrade_exp = datetime.utcnow() + timedelta(days=180)
+        user.put()
+
+    return redirect('/user/profile')
+
 def delete_pantry(request):
+    """
+    Deletes a user's pantry
+    """
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
 
     if user_id:
-        Pantry_Product.query(Pantry_Product.user_id == user_id).map(lambda key: key.delete(), keys_only=True)
+        Pantry_Product.query(Pantry_Product.user_id == user_id).map(
+            lambda key: key.delete(), keys_only=True)
         return redirect('/user/pantry')
 
     return redirect('/')
 
 
-"""
-Deletes a user's shopping list
-"""
 def delete_shopping_list(request):
+    """
+    Deletes a user's shopping list
+    """
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
 
     if user_id:
-        Shopping_List_Product.query(Shopping_List_Product.user_id == user_id).map(lambda key: key.delete(), keys_only=True)
+        Shopping_List_Product.query(Shopping_List_Product.user_id == user_id).map(
+            lambda key: key.delete(), keys_only=True)
         return redirect('/user/shopping_list')
  
     return redirect('/')
 
 
-"""
-Returns the web home page
-"""
 def index(request):    
+    """
+    Returns the web home page
+    """
     return render_to_response(
         'index.html', 
         {
@@ -247,98 +332,134 @@ def index(request):
         RequestContext(request))
 
 
-"""
-Returns the privacy policy page
-"""
 def privacy_policy(request):
+    """
+    Returns the privacy policy page
+    """
     return render_to_response('privacy_policy.html')
 
 
-"""
-Removes an additive from a user's additive list
-"""
 def remove_additive(request):
-    session_id = request.get_signed_cookie('session_id', default=None)
-    user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
-    user = User.get_by_id(user_id) if user_id else None
-    additive = request.POST.get('additive', '')
-
-    if session_id and user and additive in user.additives:
-        user.additives.remove(additive)
-        set_profile = label.set_profile(session_id, user)
-        if 'result' in set_profile and set_profile['result']  == 'success':
-            user.put()
-            return HttpResponse('{"result": "success"}', content_type='application/json')
-
-    return HttpResponse('{"result": "failure"}', content_type='application/json')
-
-
-"""
-Removes an allergen from a user's allergen list
-"""
-def remove_allergen(request):
-    session_id = request.get_signed_cookie('session_id', default=None)
-    user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
-    user = User.get_by_id(user_id) if user_id else None
-    allergen = request.POST.get('allergen', '')
-
-    if session_id and user and allergen in user.allergens:
-        user.allergens.remove(allergen)
-        set_profile = label.set_profile(session_id, user)
-        if 'result' in set_profile and set_profile['result']  == 'success':
-            user.put()
-            return HttpResponse('{"result": "success"}', content_type='application/json')
-
-    return HttpResponse('{"result": "failure"}', content_type='application/json')
-
-
-"""
-Removes a nutrient from a user's nutrient list
-"""
-def remove_nutrient(request):
-    session_id = request.get_signed_cookie('session_id', default=None)
-    user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
-    user = User.get_by_id(user_id) if user_id else None
-    nutrient = request.POST.get('nutrient', '')
-
-    if session_id and user and nutrient in user.nutrients:
-        user.nutrients.remove(nutrient)
-        set_profile = label.set_profile(session_id, user)
-        if 'result' in set_profile and set_profile['result']  == 'success':
-            user.put()
-            return HttpResponse('{"result": "success"}', content_type='application/json')
-
-    return HttpResponse('{"result": "failure"}', content_type='application/json')
-
-
-"""
-Removes an ingredient from a user's ingredient list
-"""
-def remove_ingredient(request):
-    session_id = request.get_signed_cookie('session_id', default=None)
-    user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
-    user = User.get_by_id(user_id) if user_id else None
-    pair = [request.POST.get('ingredient_id', ''), request.POST.get('ingredient_name', '')]
-
+    """
+    Removes an additive from a user's additive list
+    """
     try:
-        pair[0] = int(pair[0])
-    except ValueError:
-        return HttpResponse('{"result": "failure"}', content_type='application/json')
+        session_id = request.get_signed_cookie('session_id', default=None)
+        euid = request.COOKIES.get('euid')
+        user = User.get_by_id(crypto.decrypt(euid))
+        additive_name = request.POST.get('additive', '')
+        additive = Label.query(
+            Label.user_id == user.key.id(),
+            Label.name == additive_name).get(keys_only=True)
 
-    if session_id and user and pair in user.ingredients:
-        user.ingredients.remove(pair)
-        status = label.remove_ingredient(session_id, pair[0])
-        if 'result' in status and status['result']  == 'success':
-            user.put()
-            return HttpResponse('{"result": "success"}', content_type='application/json')
+        if session_id and additive:
+            profile = user.get_profile()
+
+            for a in profile['additives']:
+                if a['name'] == additive_name: a['value'] = 'false'
+
+            response = label_api.set_profile(session_id, profile)
+
+            if response.get('result')  == 'success':
+                additive.delete_async()
+                return HttpResponse('{"result": "success"}', content_type='application/json')
+    except:
+        pass
 
     return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
-"""
-Removes a product from the Pantry_Product table
-"""
+def remove_allergen(request):
+    """
+    Removes an allergen from a user's allergen list
+    """
+    try:
+        session_id = request.get_signed_cookie('session_id', default=None)
+        euid = request.COOKIES.get('euid')
+        user = User.get_by_id(crypto.decrypt(euid))
+        allergen_name = request.POST.get('allergen', '')
+        allergen = Label.query(
+            Label.user_id == user.key.id(),
+            Label.name == allergen_name).get(keys_only=True)
+
+        if session_id and allergen:
+            profile = user.get_profile()
+
+            for a in profile['allergens']:
+                if a['name'] == allergen_name: a['value'] = 'false'
+
+            response = label_api.set_profile(session_id, profile)
+
+            if response.get('result')  == 'success':
+                allergen.delete_async()
+                return HttpResponse('{"result": "success"}', content_type='application/json')
+    except:
+        pass
+
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
+
+
+def remove_ingredient(request):
+    """
+    Removes an ingredient from a user's ingredient list
+    """
+    try:
+        session_id = request.get_signed_cookie('session_id', default=None)
+        user_id = crypto.decrypt(request.COOKIES.get('euid', ''))
+        ingredient_id = request.POST.get('ingredient_id')
+        ingredient_name = request.POST.get('ingredient_name')
+        ingredient = Label.query(
+            Label.user_id == user_id,
+            Label.name == ingredient_name,
+            Label.sub_id == ingredient_id).get(keys_only=True)
+
+        if session_id and ingredient:
+            response = label_api.remove_ingredient(session_id, ingredient_id)
+
+            if response.get('result') == 'success':
+                ingredient.delete_async()
+                return HttpResponse('{"result": "success"}', content_type='application/json')    
+
+    except:
+        pass
+
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
+
+
+def remove_nutrient(request):
+    """
+    Removes a nutrient from a user's nutrient list
+    """
+    try:
+        session_id = request.get_signed_cookie('session_id', default=None)
+        euid = request.COOKIES.get('euid')
+        user = User.get_by_id(crypto.decrypt(euid))
+        nutrient_name = request.POST.get('nutrient', '')
+        nutrient = Label.query(
+            Label.user_id == user.key.id(),
+            Label.name == nutrient_name).get(keys_only=True)
+
+        if session_id and nutrient:
+            profile = user.get_profile()
+
+            for n in profile['nutrients']:
+                if n['name'] == nutrient_name: n['value'] = 'false'
+
+            response = label_api.set_profile(session_id, profile)
+
+            if response.get('result')  == 'success':
+                nutrient.delete_async()
+                return HttpResponse('{"result": "success"}', content_type='application/json')
+    except:
+        pass
+
+    return HttpResponse('{"result": "failure"}', content_type='application/json')
+
+
 def remove_from_pantry(request):
+    """
+    Removes a product from the Pantry_Product table
+    """
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     barcode = request.POST.get('barcode', '')
 
@@ -353,10 +474,10 @@ def remove_from_pantry(request):
     return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
-"""
-Removes a product from the Shopping_List_Product table
-"""
 def remove_from_shopping_list(request):
+    """
+    Removes a product from the Shopping_List_Product table
+    """
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     barcode = request.POST.get('barcode', '')
 
@@ -371,32 +492,30 @@ def remove_from_shopping_list(request):
     return HttpResponse('{"result": "failure"}', content_type='application/json')
 
 
-"""
-Returns do-not-crawl messages to web-crawler programs for
-development and test environments
-"""
 def robots(request):
+    """
+    Returns do-not-crawl messages to web-crawler programs for
+    development and test environments
+    """
     return render_to_response('robots.txt')
 
 
-"""
-Returns a list of search results.
-"""
 def search(request):
-    search_term = request.GET.get('q', '').lower()
+    """
+    Returns a list of search results.
+    """
+    search_term = request.GET.get('q').lower()
     start = request.GET.get('start', '0')
-    mobile = request.GET.get('mobile', '')
+    mobile = request.GET.get('mobile')
     user = User.get_by_id(crypto.decrypt(request.COOKIES['euid'])) if 'euid' in request.COOKIES else None
     session_id = request.get_signed_cookie('session_id', default=None)
 
     if not session_id:
         session = {}
-        temp_user = Temp_User()
-        temp_user.put()
         while 'session_id' not in session:
-            session = label.create_session(user_id='Temp_User_{0}'.format(temp_user.key.id()))
+            session = label_api.create_session()
         session_id = session['session_id']
-        label.set_profile(session_id)
+        label_api.set_profile(session_id)
 
     products = [] # list of product info dictionaries
     pages = [] # list of (page_start, page_label) tuples
@@ -408,29 +527,54 @@ def search(request):
     except ValueError:
         start = 0
 
-    nutr = user.nutrients if user else map(lambda x: x['name'], settings.LABEL_DEFAULT_PROFILE['nutrients'])
-    allg = user.allergens if user else map(lambda x: x['name'], settings.LABEL_DEFAULT_PROFILE['allergens'])
-    addt = user.additives if user else map(lambda x: x['name'], settings.LABEL_DEFAULT_PROFILE['additives'])
-    ingr = user.ingredients if user else []
+    if user:
+        profile_hash = crypto.get_hmac_sha256_hash(json.dumps(user.get_profile(), sort_keys=True))
+    else:
+        profile_hash = crypto.get_hmac_sha256_hash(json.dumps({
+            "nutrients": [
+                {"name": "Calories", "value": "true"},
+                {"name": "Total Fat", "value": "true"},
+                {"name": "Cholesterol", "value": "true"},
+                {"name": "Sodium", "value": "true"},
+                {"name": "Total Carbohydrate", "value": "true"},
+                {"name": "Dietary Fiber", "value": "true"},
+                {"name": "Sugars", "value": "true"},
+                {"name": "Protein", "value": "true"}
+            ],
+            "allergens": [
+                {"name": "Gluten", "value": "true"}
+            ],
+            "additives": [
+                {"name": "Preservatives", "value": "true"}
+            ],
+            "myingredients": [],
+            "mysort": [
+                {
+                    "sort_variable": "Calories",
+                    "sort_order": 1,
+                    "variable_type": 1
+                }
+            ],
+        }, sort_keys=True))
 
-    in_cache = Search.query(Search.search_term == search_term,
-                            Search.start == start,
-                            Search.nutrients == nutr,
-                            Search.allergens == allg,
-                            Search.additives == addt,
-                            Search.ingredients == ingr).get()
+    cached = Search_Cache.query(
+        Search_Cache.profile_hash == profile_hash,
+        Search_Cache.search_term == search_term,
+        Search_Cache.start == start).get()
 
-    # Data in cache and less than 30 days old
-    if in_cache and (datetime.utcnow() - in_cache.update_datetime).days < 30:
-        products = in_cache.products
-        pages = in_cache.pages
-        total_found = in_cache.nfound
+    # Data in cache and less than 5 days old
+    if cached and (datetime.utcnow() - cached.updated_on).days < 5:
+        products = cached.products
+        pages = cached.pages
+        total_found = cached.nfound
 
     else:
+        if cached: cached.key.delete()
+
         search_result = {}
 
         while 'numFound' not in search_result:
-            search_result = label.search_products(session_id, search_term, start=start)
+            search_result = label_api.search_products(session_id, search_term, start=start)
 
         total_found = search_result['numFound']
 
@@ -443,7 +587,7 @@ def search(request):
             if product['product_size'].strip() == 'none':
                 product['product_size'] = ''
 
-            prod_details = label.label_array(session_id, product['upc'])
+            prod_details = label_api.label_array(session_id, product['upc'])
 
             if 'productsArray' in prod_details:
                 product['details'] = prod_details['productsArray'][0]
@@ -477,12 +621,9 @@ def search(request):
                         product['may_contain'].append(ingredient['name'])
 
         # Add to cache
-        Search(search_term = search_term,
+        Search_Cache(profile_hash = profile_hash,
+               search_term = search_term,
                start = start,
-               nutrients = nutr,
-               allergens = allg,
-               additives = addt,
-               ingredients = ingr,
                products = products,
                pages = pages,
                nfound = total_found).put()
@@ -519,10 +660,10 @@ def search(request):
     return response
 
 
-"""
-Searches Label API for ingredients by name and returns JSON
-"""
 def search_ingredients(request):
+    """
+    Searches Label API for ingredients by name and returns JSON
+    """
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     session_id = request.get_signed_cookie('session_id', default=None)
     search_term = request.GET.get('ingredient', '')
@@ -534,7 +675,7 @@ def search_ingredients(request):
         except ValueError:
             start = 0
 
-        search_result = label.ingredient_search(session_id, search_term, start=start)
+        search_result = label_api.ingredient_search(session_id, search_term, start=start)
 
         if 'error' not in search_result:
             return HttpResponse(
@@ -549,10 +690,11 @@ def search_ingredients(request):
     
     return HttpResponse('{"result": "failure"}', content_type='application/json')
 
-"""
-Verifies reCaptcha and sends email to the designated email
-"""
+
 def send_contact_message(request):
+    """
+    Verifies reCaptcha and sends email to the designated email
+    """
     recaptcha_challenge_field = request.POST.get('recaptcha_challenge_field', '')
     recaptcha_response_field = request.POST.get('recaptcha_response_field', '')
     sender_email = request.POST.get('sender_email', '').strip()
@@ -593,31 +735,34 @@ def send_contact_message(request):
     return HttpResponse('recaptcha_failed', content_type='text/plain')
 
 
-"""
-Returns user signin page
-"""
 def signin(request):
-    return render_to_response('signin.html', context_instance=RequestContext(request))
+    """
+    Returns user signin page
+    """
+    return render_to_response('signin.html', {
+        'google_client_id': settings.GOOGLE_CLIENT['web']['client_id']
+    }, context_instance=RequestContext(request))
 
 
-"""
-Returns a sitemap XML
-"""
 def sitemap(request):
-    return render_to_response('sitemap.xml', {'categories': constants.categories}, RequestContext(request))
+    """
+    Returns a sitemap XML
+    """
+    return render_to_response('sitemap.xml', {
+        'categories': constants.categories}, RequestContext(request))
 
 
-"""
-Returns the terms of service page
-"""
 def terms_of_service(request):
+    """
+    Returns the terms of service page
+    """
     return render_to_response('terms_of_service.html')
 
 
-"""
-Returns the user pantry page
-"""
 def user_pantry(request):
+    """
+    Returns the user pantry page
+    """
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     session_id = request.get_signed_cookie('session_id', default=None)
 
@@ -632,7 +777,9 @@ def user_pantry(request):
             start = 0
 
         # Get shopping list products by user_id        
-        prod_entities = Pantry_Product.query(Pantry_Product.user_id == user_id).order(-Pantry_Product.add_datetime).fetch(limit=10, offset=start)
+        prod_entities = Pantry_Product.query(
+            Pantry_Product.user_id == user_id).order(
+                -Pantry_Product.added_on).fetch(limit=5, offset=start)
 
         # Get total number of shopping list
         total = Pantry_Product.query(Pantry_Product.user_id == user_id).count()
@@ -643,7 +790,7 @@ def user_pantry(request):
 
         for entity in prod_entities:
             # Get product detailed info
-            prod_details = label.label_array(session_id, entity.barcode)
+            prod_details = label_api.label_array(session_id, entity.barcode)
 
             if 'productsArray' in prod_details:
                 products.append(prod_details['productsArray'][0])
@@ -689,7 +836,7 @@ def user_pantry(request):
                 products[length-1]['on_shopping_list'] = 'true'
 
             # Get time between now when product was added
-            products[length-1]['t_delta'] = utils.get_time_delta_str(now - entity.add_datetime)
+            products[length-1]['t_delta'] = utils.get_time_delta_str(now - entity.added_on)
 
         pages = get_pages(start, total)
 
@@ -708,51 +855,69 @@ def user_pantry(request):
     return redirect('/signin')
 
 
-"""
-Returns user profile page
-"""
 def user_profile(request):
+    """
+    Returns user profile page
+    """
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
+    session_id = request.get_signed_cookie('session_id', default=None)
 
-    if user_id:
+    if user_id and session_id:
         user = User.get_by_id(user_id)
-        upgrade_token = None
+        profile = user.get_profile()
+        show_expired = False
+        show_failed_upgrade = False
 
-        if not user.is_premium:
-            upgrade_token = jwt.encode(
-                {
-                    'iss': settings.GOOGLE_SELLER_ID,
-                    'aud': 'Google', # Must be Google
-                    'typ': 'google/payments/inapp/item/v1', # Must be google/payments/inapp/item/v1
-                    'exp': int(time.time()+3600), # expiration time
-                    'iat': int(time.time()), # issue time
-                    'request': {
-                        'name': 'Classifood Upgrade',
-                        'description': 'Upgrade for premium features on Classifood',
-                        'price': '3.00',
-                        'currencyCode': 'USD',
-                        'sellerData': 'user_id:{0}'.format(user_id)
-                    }
-                }, settings.GOOGLE_SELLER_SECRET)
+        if user.group_id == 2: # Upgraded user
+            now = datetime.utcnow()
+            if user.upgrade_exp < now:
+                user.group_id = 1
+                user.reset_profile(session_id)
+                user.put()
+                if (now - user.upgrade_exp).days < 3:
+                    show_expired = True
+
+        if request.GET.get('upgrade_status') == '0':
+            show_failed_upgrade = True
+
+        def filter_list(a_list):
+            result = {}
+            for x in a_list:
+                if x['value'] == 'true':
+                    result[x['name']] = True
+            return result
+
+        user_nutrients = filter_list(profile['nutrients'])
+        user_allergens = filter_list(profile['allergens'])
+        user_additives = filter_list(profile['additives'])
+        user_ingredients = Label.query(
+            Label.user_id == user_id,
+            Label.sub_id != None).fetch()
 
         return render_to_response(
             'user_profile.html',
             {
                 'user': user,
-                'upgrade_token': upgrade_token,
+                'user_nutrients': user_nutrients,
+                'user_allergens': user_allergens,
+                'user_additives': user_additives,
+                'user_ingredients': user_ingredients,
                 'known_nutrients': constants.known_nutrients,
                 'known_allergens': constants.known_allergens,
-                'known_additives': constants.known_additives
+                'known_additives': constants.known_additives,
+                'show_expired': show_expired,
+                'show_failed_upgrade': show_failed_upgrade,
+                'stripe_public_key': settings.STRIPE_PUBLIC_KEY
             },
             RequestContext(request))
 
     return redirect('/signin')    
 
 
-"""
-Returns the user shopping list
-"""
 def user_shopping_list(request):
+    """
+    Returns the user shopping list
+    """
     user_id = crypto.decrypt(request.COOKIES['euid']) if 'euid' in request.COOKIES else None
     session_id = request.get_signed_cookie('session_id', default=None)
     
@@ -767,7 +932,9 @@ def user_shopping_list(request):
             start = 0
 
         # Get shopping list products by user_id        
-        prod_entities = Shopping_List_Product.query(Shopping_List_Product.user_id == user_id).order(-Shopping_List_Product.add_datetime).fetch(limit=10, offset=start)
+        prod_entities = Shopping_List_Product.query(
+            Shopping_List_Product.user_id == user_id).order(
+                -Shopping_List_Product.added_on).fetch(limit=5, offset=start)
 
         # Get total number of shopping list
         total = Shopping_List_Product.query(Shopping_List_Product.user_id == user_id).count()
@@ -778,7 +945,7 @@ def user_shopping_list(request):
 
         for entity in prod_entities:
             # Get product detailed info
-            prod_details = label.label_array(session_id, entity.barcode)
+            prod_details = label_api.label_array(session_id, entity.barcode)
 
             if 'productsArray' in prod_details:
                 products.append(prod_details['productsArray'][0])
@@ -824,7 +991,7 @@ def user_shopping_list(request):
                 products[length-1]['in_pantry'] = 'true'
 
             # Get time between now when product was added
-            products[length-1]['t_delta'] = utils.get_time_delta_str(now - entity.add_datetime)
+            products[length-1]['t_delta'] = utils.get_time_delta_str(now - entity.added_on)
 
         pages = get_pages(start, total)
 
@@ -842,75 +1009,49 @@ def user_shopping_list(request):
 
     return redirect('/signin')
 
-
-"""
-Verifies Google Checkout purchase
-"""
-@csrf_exempt
-def verify_purchase(request):
-    if request.method == 'POST':
-        data = jwt.decode(request.POST.get('jwt', None), settings.GOOGLE_SELLER_SECRET)
-
-	if data and data['request']['name'] == 'Classifood Upgrade' and data['request']['sellerData'].find('user_id') != -1:
-	    user = User.get_by_id(data['request']['sellerData'][8:])
-	    if user:
-	        user.is_premium = True
-	        user.put()
-		Order(id = data['response']['orderId'],
-                      user_id = user.key.id(),
-                      name = data['request']['name'],
-                      description = data['request']['description'],
-                      price = data['request']['price'],
-                      currency = data['request']['currencyCode']).put()
-
-                return HttpResponse(data['response']['orderId'], content_type='text/plain')
-
-    return HttpResponse('error', content_type='text/plain')
-
-
-"""
-Returns the 404 error - not found - page
-"""
 def err404(request):
+    """
+    Returns the 404 error - not found - page
+    """
     return render_to_response('404.html')
 
 
-"""
-Returns the 500 error - internal server error - page
-"""
 def err500(request):
+    """
+    Returns the 500 error - internal server error - page
+    """
     return render_to_response('500.html')
 
 
-"""
-Returns (start, label) tuples for pagination
-"""
 def get_pages(start, total):
+    """
+    Returns (start, label) tuples for pagination
+    """
     pages = []
 
     # Start row of a 5-page batch    
-    first_page_start = start / 50 * 50
+    first_page_start = start / 25 * 25
 
     # Is there a previous batch of pages?
-    if first_page_start - 50 >= 0:
-        previous_start = first_page_start - 50
-        previous_label = previous_start / 10 + 1
-        pages.append((previous_start, '%i - %i' % (previous_label, previous_label + 4)))
+    if first_page_start - 25 >= 0:
+        previous_start = first_page_start - 25
+        previous_label = previous_start / 5 + 1
+        pages.append((previous_start, '{0} - {1}'.format(previous_label, previous_label + 4)))
 
     # Current pages
     page_start = first_page_start
-    page_label = page_start / 10 + 1
+    page_label = page_start / 5 + 1
     i = 0
     while i < 5 and page_start < total:
         pages.append((page_start, str(page_label)))
-        page_start += 10
+        page_start += 5
         page_label += 1
         i += 1
 
     # Is there a next batch of pages?
-    if first_page_start + 50 < total:
-        next_start = first_page_start + 50
-        next_label = next_start / 10 + 1
-        pages.append((next_start, "%i - %i" % (next_label, next_label + 4)))
+    if first_page_start + 25 < total:
+        next_start = first_page_start + 25
+        next_label = next_start / 5 + 1
+        pages.append((next_start, '{0} - {1}'.format(next_label, next_label + 4)))
 
     return pages
